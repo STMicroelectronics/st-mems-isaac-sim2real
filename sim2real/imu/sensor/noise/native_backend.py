@@ -1,3 +1,19 @@
+# ******************************************************************************
+# File Name          : native_backend.py
+# Description        : Python wrapper around the native C++ noise backend used
+#                      for ST IMU sim2real signal generation.
+# ******************************************************************************
+# @attention
+#
+# Copyright (c) 2026 STMicroelectronics.
+# All rights reserved.
+#
+# This software is licensed under terms that can be found in the LICENSE file
+# in the root directory of this software component.
+# If no LICENSE file comes with this software, it is provided AS-IS.
+#
+# ******************************************************************************
+
 import importlib
 import os
 from pathlib import Path
