@@ -1,0 +1,18 @@
+# ============================================================
+# st-mems-isaac-sim2real — Python Requirements
+# ============================================================
+# Python 3.10 required (bundled with Isaac Sim 5.1.0)
+# Install with: pip install -r requirements.txt
+#
+# NOTE: omni.* packages (omni.usd, omni.physx, omni.timeline, etc.)
+# are bundled with Isaac Sim and do NOT need to be installed here.
+# These requirements cover only the verification and plotting scripts.
+# ============================================================
+
+# --- Verification Script (verification_script.py) ---
+numpy>=1.24.0
+
+# --- Plotting Script (plot_verification.py) ---
+pandas>=1.5.0
+matplotlib>=3.6.0
+
