@@ -32,6 +32,7 @@ pip-wheel-metadata/
 sim2real_native_v0_1*.so
 *.dylib
 *.dll
+!lib/sim2real_native_v0_1.so
 
 # Editor / IDE
 .idea/
