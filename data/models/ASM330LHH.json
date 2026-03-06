@@ -1,0 +1,15 @@
+{
+    "model_id": "ASM330LHH",
+    "accel_fs_g": 8.0,
+    "gyro_fs_dps": 2000.0,
+    "odr_hz": 104.0,
+    "vibration": true,
+    "accel_white_std": 0.05,
+    "gyro_white_std": 0.003,
+    "floor_noise_sigma": 1.5,
+    "g_sensitivity": 0.01,
+    "tau_a": 2000.0,
+    "tau_g": 2000.0,
+    "accel_bias_sigma": 0.04,
+    "gyro_bias_sigma": 0.003
+}

@@ -1,0 +1,7 @@
+{
+    "model_id": "LSM6DSV",
+    "accel_fs_g": 4.0,
+    "gyro_fs_dps": 500.0,
+    "odr_hz": 120.0,
+    "noise_profile": "lsm6dsv_default"
+}
