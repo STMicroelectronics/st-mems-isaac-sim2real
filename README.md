@@ -1,6 +1,6 @@
 # Nvidia Isaac Sim Extension for STMicroelectronics Sensors
 
-A custom **Isaac Sim 5.0** extension that adds STMicroelectronics IMU sensor models directly into the `Create → Sensors` menu. Spawns a physics-driven, noise-augmented IMU prim with a visible viewport marker.
+A custom **Isaac Sim 5.1.0** extension that adds STMicroelectronics IMU sensor models directly into the `Create → Sensors` menu. Spawns a physics-driven, noise-augmented IMU prim with a visible viewport marker.
 
 ![Preview](imgs/preview.png)
 
@@ -22,7 +22,7 @@ A custom **Isaac Sim 5.0** extension that adds STMicroelectronics IMU sensor mod
 ## Requirements
 
 - **Ubuntu 22.04** (tested)
-- **Isaac Sim Full 5.0.0** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
+- **Isaac Sim Full 5.1.0** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
 - **Python 3.10** (bundled with Isaac Sim)
 - The compiled **C++ noise engine**: `sim2real_native_v0_1.so`
   - This is a platform-specific binary. Contact the maintainer to obtain the correct build.
@@ -225,7 +225,7 @@ print("Visual prim exists:", prim.IsValid())
 
 | Component | Version |
 |---|---|
-| Isaac Sim | 5.0.0 |
+| Isaac Sim | 5.1.0 |
 | Ubuntu | 22.04 |
 | Python | 3.10 |
 | GPU | NVIDIA GeForce RTX 3060 |
