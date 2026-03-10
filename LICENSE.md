@@ -1,8 +1,10 @@
+SLA0110
+
 LIMITED LICENSE AGREEMENT FOR ST MATERIALS
 
 **IMPORTANT-READ CAREFULLY:**
 
-THE LICENSED MATERIALS ARE LICENSED TO YOU ON THE CONDITION THAT YOU ACCEPT ALL THE TERMS AND CONDITIONS OF THIS LLA. BY CLICKING ON THE "I ACCEPT" BUTTON OR BY INSTALLING, COPYING, DOWNLOADING, ACCESSING OR OTHERWISE USING THE LICENSED MATERIALS, YOU AGREE TO BE BOUND BY THE TERMS OF THIS LLA. IF YOU DO NOT AGREE WITH ANY CONDITION OF THIS LLA, DO NOT INSTALL, ACCESS OR USE THE LICENSED MATERIALS.
+THE LICENSED MATERIALS ARE LICENSED TO YOU ON THE CONDITION THAT YOU ACCEPT ALL THE TERMS AND CONDITIONS OF THIS LLA. BY INSTALLING, COPYING, DOWNLOADING, ACCESSING OR OTHERWISE USING THE LICENSED MATERIALS, YOU AGREE TO BE BOUND BY THE TERMS OF THIS LLA. IF YOU DO NOT AGREE WITH ANY CONDITION OF THIS LLA, DO NOT INSTALL, ACCESS OR USE THE LICENSED MATERIALS.
 
 
 This Limited License Agreement ("LLA") is made between you (either an individual person or a single legal entity, who will be referred to in this LLA as "You" or “Licensee”) and STMicroelectronics International NV, a company incorporated under the laws of the Netherlands acting for the purpose of this LLA through its Swiss branch 39, Chemin du Champ des Filles, 1228 Plan-les-Ouates, Geneva, Switzerland (hereinafter “ST”). 
@@ -22,8 +24,9 @@ For the purpose of this LLA:
 1. LIMITED LICENSE
 
 Subject to the terms and conditions of this LLA and applicable Open Source Terms (as defined hereafter) and during the term of this LLA, ST hereby grants You under intellectual property rights owned by ST and its Affiliates or under which ST and its Affiliates has the right to grant a license, a worldwide, non-exclusive, non-transferable, royalty-free license, without the right to sub-license (except as expressly stipulated herein or authorized in writing by an authorized representative of ST) to install and use the Licensed Materials solely for internal development, testing, and simulation activities on NVIDIA Platforms.
+You may develop internal simulation applications, configurations or scenarios that interface with or make calls to the Licensed Materials on NVIDIA Platforms, provided that such applications are not distributed to third parties together with the Licensed Materials.
 You acknowledge that the Licensed Materials have not been specifically designed to meet your individual requirements and that You have all information necessary to evaluate whether the Licensed Materials meet your requirements or not, and will be suitable for your intended use or application. Therefore, the Licensed Materials shall be deemed accepted upon delivery to Licensee. 
-You shall use, at your own risk, the Licensed Materials. You acknowledge that ST and its Affiliates cannot in any way be held responsible for the consequences resulting from use of the Licensed Materials and any development made following such use of the Licensed Materials. Notwithstanding anything to the contrary herein, You are not authorized to sublicense to or have used the Licensed Materials by a competitor of ST.
+You shall use, at your own risk, the Licensed Materials. You acknowledge that ST and its Affiliates cannot in any way be held responsible for the consequences resulting from use of the Licensed Materials and any development made following such use of the Licensed Materials. 
 Licensed Materials are not specifically designed for use in safety critical applications such as life supporting devices or systems, and nuclear, automotive or aerospace applications or environments. ST and its Affiliates expressly disclaim any responsibility for such usage which shall be made by You at your sole risk, even if ST and its Affiliates have been informed You in writing of such usage. 
 
 2. RESTRICTIONS AND ADDITIONAL OBLIGATIONS
