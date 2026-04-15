@@ -22,6 +22,7 @@ import sys
 import numpy as np
 
 NATIVE_MODULE_NAME = "sim2real_native_v0_1"
+NATIVE_MODULE_GLOB = f"{NATIVE_MODULE_NAME}*.so"
 NATIVE_PATH_ENV_VAR = "SIM2REAL_NATIVE_PATH"
 
 
@@ -35,10 +36,12 @@ def _iter_candidate_native_paths():
                 yield path
 
     module_dir = Path(__file__).resolve().parent
-    project_root = module_dir.parents[4] if len(module_dir.parents) > 4 else module_dir
+    extension_root = module_dir.parents[3] if len(module_dir.parents) > 3 else module_dir
     for path in (
         module_dir,
-        project_root,
+        extension_root,
+        extension_root / "sim_binary",
+        extension_root / "lib",
         Path.cwd(),
         Path.home() / "Downloads",
     ):
@@ -71,7 +74,7 @@ else:
     print(f"[Sim2Real IMU] WARNING: Could not load C++ backend: {_NATIVE_IMPORT_ERROR}")
     print(
         f"[Sim2Real IMU] Set {NATIVE_PATH_ENV_VAR} to the directory containing "
-        f"{NATIVE_MODULE_NAME}.so if needed."
+        f"{NATIVE_MODULE_GLOB} if needed."
     )
     print("[Sim2Real IMU] IMU prims will be registered but noise will not be applied.")
 

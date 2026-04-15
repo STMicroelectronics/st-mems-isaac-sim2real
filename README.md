@@ -1,6 +1,6 @@
 # Nvidia Isaac Sim Extension for STMicroelectronics Sensors
 
-A custom **Isaac Sim 5.1.0** extension that adds STMicroelectronics IMU sensor models directly into the `Create → Sensors` menu. Spawns a physics-driven, noise-augmented IMU prim with a visible viewport marker.
+A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models directly into the `Create → Sensors` menu. Spawns a physics-driven, noise-augmented IMU prim with a visible viewport marker.
 
 ![Preview](imgs/preview.png)
 
@@ -22,11 +22,12 @@ A custom **Isaac Sim 5.1.0** extension that adds STMicroelectronics IMU sensor m
 ## Requirements
 
 - **Ubuntu 22.04** (tested)
-- **Isaac Sim Full 5.1.0** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
-- **Python 3.10** (bundled with Isaac Sim)
-- The compiled **C++ noise engine**: `sim2real_native_v0_1.so`
+- **Isaac Sim Full 5.1.0 or 6.0.0** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
+- **Python 3.10** (Isaac Sim 5.1.0) or **Python 3.12** (Isaac Sim 6.0.0)
+- The compiled **C++ noise engine**: `sim2real_native_v0_1.so` or `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
   - This is a platform-specific binary. Contact the maintainer to obtain the correct build.
-  - Must be compiled for Python 3.10 on Linux x86_64.
+  - The loader will pick the matching binary automatically when both files are present.
+  - Must be compiled for Python 3.10 or 3.12 on Linux x86_64, matching the Isaac Sim runtime.
 
 ---
 
@@ -80,7 +81,7 @@ cp -r . /path/to/isaac-sim/exts/sim2real.imu.sensor/
 
 ### Step 3 — Point Isaac Sim to the C++ engine
 
-Set an environment variable to the folder containing `sim2real_native_v0_1.so` before launching Isaac Sim:
+Set an environment variable to the folder containing the matching `sim2real_native_v0_1*.so` binary before launching Isaac Sim:
 
 ```bash
 export SIM2REAL_NATIVE_PATH="/home/<your-username>/Downloads"
@@ -200,8 +201,8 @@ find /path/to/exts/sim2real.imu.sensor -type f
 Confirm all files are present including `noise/__init__.py`.
 
 **C++ backend fails to load**
-- Verify `SIM2REAL_NATIVE_PATH` points to the folder containing `sim2real_native_v0_1.so`
-- Confirm the `.so` was compiled for Python 3.10
+- Verify `SIM2REAL_NATIVE_PATH` points to the folder containing `sim2real_native_v0_1*.so`
+- Confirm the `.so` matches the Python version bundled with your Isaac Sim build
 
 **Menu shows but cube is not visible in viewport**
 - Toggle the extension off and on
@@ -225,7 +226,7 @@ print("Visual prim exists:", prim.IsValid())
 
 | Component | Version |
 |---|---|
-| Isaac Sim | 5.1.0 |
+| Isaac Sim | 5.1.0, 6.0.0 |
 | Ubuntu | 22.04 |
-| Python | 3.10 |
+| Python | 3.10, 3.12 |
 | GPU | NVIDIA GeForce RTX 3060 |
