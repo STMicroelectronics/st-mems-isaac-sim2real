@@ -2,6 +2,7 @@
 # File Name          : runtime.py
 # Description        : Physics-step runtime scheduler for ST IMU sensor ticks
 #                      and noisy sample publishing.
+# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #
@@ -145,7 +146,7 @@ class ImuSensorRuntime:
         This is called once at registration, not every physics step.
         """
         try:
-            from omni.isaac.sensor import IMUSensor
+            from isaacsim.sensors.experimental.physics import IMUSensor
 
             truth_sensor_path = f"{attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}"
             stage = omni.usd.get_context().get_stage()
@@ -238,10 +239,11 @@ class ImuSensorRuntime:
             raw = sensor.get_current_frame(read_gravity=True)
             if raw is None:
                 return None
-
+            
+            #Changed for version 6.0.0
             return {
-                "lin_acc": np.array(raw["lin_acc"], dtype=float),
-                "ang_vel": np.array(raw["ang_vel"], dtype=float),
+                "lin_acc": np.array(raw["linear_acceleration"], dtype=float),
+                "ang_vel": np.array(raw["angular_velocity"], dtype=float),
             }
         except Exception as error:
             print(

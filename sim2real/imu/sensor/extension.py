@@ -2,6 +2,7 @@
 # File Name          : extension.py
 # Description        : Isaac Sim extension entry point for ST IMU menu
 #                      registration and sensor prim spawning.
+# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #

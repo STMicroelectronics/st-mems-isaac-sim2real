@@ -2,6 +2,7 @@
 # File Name          : native_backend.py
 # Description        : Python wrapper around the native C++ noise backend used
 #                      for ST IMU sim2real signal generation.
+# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #

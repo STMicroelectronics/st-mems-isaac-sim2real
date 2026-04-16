@@ -2,6 +2,7 @@
 # File Name          : plot_verification.py
 # Description        : Plotting utility for comparing clean and noisy IMU
 #                      verification trajectories.
+# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #
