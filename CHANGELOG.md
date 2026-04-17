@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [v2.0.0] - 2026-04-16
+- Breaking release: standardized production support on Isaac Sim 6.0.0 with Python 3.12.
+- Dropped Isaac Sim 5.1.0 / Python 3.10 compatibility from the main production branch.
+- Kept only the bundled Python 3.12 native backend artifact in `sim_binary/`.
+- Removed GLIBC-incompatible Python 3.10-style native backend artifacts from the production package.
+- Hardened native backend loading so incompatible override binaries do not abort extension startup.
+
 ## [v1.0.2] - 2026-03-06
 - Added `requirements.txt` for verification/plotting dependencies.
 - Added `LICENSE.md` to repository root.

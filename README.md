@@ -23,12 +23,12 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 
 - **Ubuntu 22.04** (tested)
 - **Isaac Sim Full 6.0.0** with **Python 3.12** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
-- **Isaac Sim Full 5.1.0** with **Python 3.10** is supported when a Python 3.10 native backend compiled for Ubuntu 22.04 is provided.
 - The compiled **C++ noise engine**:
   - Bundled for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
-  - Required for Isaac Sim 5.1.0 / Python 3.10 custom builds: `sim2real_native_v0_1.so`
   - Native binaries are platform-specific and must match the Python runtime and target Linux distribution.
   - Ubuntu 22.04 builds must not require a glibc version newer than the OS-provided glibc 2.35.
+
+> Version 2.x targets Isaac Sim 6.0.0 only. Older Isaac Sim releases are outside the production support scope.
 
 ---
 
@@ -53,6 +53,8 @@ st-mems-isaac-sim2real/
           __init__.py
           native_backend.py     # C++ pybind wrapper
   imgs/                         # Screenshots for this README
+  sim_binary/
+    sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so
   verification_script.py        # Trajectory logging script
   plot_verification.py          # Plot generator
   README.md
@@ -82,7 +84,7 @@ cp -r . /path/to/isaac-sim/exts/sim2real.imu.sensor/
 
 ### Step 3 — Point Isaac Sim to the C++ engine
 
-The extension auto-discovers bundled binaries from `sim_binary/`. Set `SIM2REAL_NATIVE_PATH` only when you need to override the bundled backend with a custom build, such as a Python 3.10 backend for Isaac Sim 5.1.0:
+The extension auto-discovers the bundled Python 3.12 native backend from `sim_binary/`. Set `SIM2REAL_NATIVE_PATH` only when you need to override the bundled backend with another Isaac Sim 6.0.0-compatible build:
 
 ```bash
 export SIM2REAL_NATIVE_PATH="/path/to/custom/native/backend"
@@ -203,8 +205,8 @@ Confirm all files are present including `noise/__init__.py`.
 
 **C++ backend fails to load**
 - If you set `SIM2REAL_NATIVE_PATH`, verify it points to the folder containing a compatible `sim2real_native_v0_1*.so`
-- Confirm the `.so` matches the Python version bundled with your Isaac Sim build
-- If the error mentions `GLIBC_x.y not found`, do not manually upgrade system glibc. The binary was built on a newer Linux distribution. Use the bundled Python 3.12 backend for Isaac Sim 6.0.0, or rebuild the Python 3.10 backend on Ubuntu 22.04 for Isaac Sim 5.1.0.
+- Confirm the `.so` matches Python 3.12 and the Isaac Sim 6.0.0 runtime
+- If the error mentions `GLIBC_x.y not found`, do not manually upgrade system glibc. Use a backend rebuilt on the target OS/version instead.
 
 **Menu shows but cube is not visible in viewport**
 - Toggle the extension off and on
@@ -228,7 +230,7 @@ print("Visual prim exists:", prim.IsValid())
 
 | Component | Version |
 |---|---|
-| Isaac Sim | 6.0.0; 5.1.0 with compatible Python 3.10 backend |
+| Isaac Sim | 6.0.0 |
 | Ubuntu | 22.04 |
-| Python | 3.12 bundled; 3.10 custom backend required |
+| Python | 3.12 |
 | GPU | NVIDIA GeForce RTX 3060 |
