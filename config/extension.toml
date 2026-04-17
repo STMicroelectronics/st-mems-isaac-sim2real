@@ -2,7 +2,7 @@
 title = "Sim2Real IMU Sensor"
 description = "Custom noisy IMU sensor with C++ noise engine"
 version = "2.0.0"
-authors = ["Sameer"]
+authors = ["Siddharth"]
 
 [dependencies]
 "omni.kit.menu.utils" = {}
