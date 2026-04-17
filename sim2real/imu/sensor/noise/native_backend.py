@@ -15,6 +15,8 @@
 # ******************************************************************************
 
 import importlib
+import importlib.machinery
+import importlib.util
 import os
 from pathlib import Path
 import sys
@@ -42,27 +44,57 @@ def _iter_candidate_native_paths():
         extension_root,
         extension_root / "sim_binary",
         extension_root / "lib",
-        Path.cwd(),
-        Path.home() / "Downloads",
     ):
         if path.is_dir():
             yield path
 
 
-def _load_native_module():
+def _iter_candidate_native_files():
+    """Yield native module files in Python ABI preference order."""
     seen = set()
-    for path in _iter_candidate_native_paths():
-        path_str = str(path)
-        if path_str in seen:
-            continue
-        seen.add(path_str)
-        if path_str not in sys.path:
-            sys.path.append(path_str)
+    for directory in _iter_candidate_native_paths():
+        for suffix in importlib.machinery.EXTENSION_SUFFIXES:
+            candidate = directory / f"{NATIVE_MODULE_NAME}{suffix}"
+            if not candidate.is_file():
+                continue
+
+            candidate_key = str(candidate.resolve())
+            if candidate_key in seen:
+                continue
+            seen.add(candidate_key)
+            yield candidate
+
+
+def _load_native_file(native_file: Path):
+    spec = importlib.util.spec_from_file_location(NATIVE_MODULE_NAME, native_file)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not create import spec for {native_file}")
+
+    native_module = importlib.util.module_from_spec(spec)
+    sys.modules[NATIVE_MODULE_NAME] = native_module
+    spec.loader.exec_module(native_module)
+    return native_module
+
+
+def _load_native_module():
+    attempt_errors = []
+    for native_file in _iter_candidate_native_files():
+        try:
+            return _load_native_file(native_file), None
+        except (ImportError, OSError) as load_error:
+            sys.modules.pop(NATIVE_MODULE_NAME, None)
+            attempt_errors.append(f"{native_file}: {load_error}")
 
     try:
         native_module = importlib.import_module(NATIVE_MODULE_NAME)
         return native_module, None
     except ImportError as import_error:
+        if attempt_errors:
+            error_details = "; ".join(attempt_errors)
+            return None, ImportError(
+                f"Could not load any candidate native backend. Attempts: {error_details}. "
+                f"Fallback import error: {import_error}"
+            )
         return None, import_error
 
 
