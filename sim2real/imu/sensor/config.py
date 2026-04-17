@@ -2,7 +2,6 @@
 # File Name          : config.py
 # Description        : Utilities to resolve extension root and load per-model
 #                      IMU JSON configuration.
-# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #

@@ -2,7 +2,6 @@
 # File Name          : verification_script.py
 # Description        : Script to generate clean vs noisy IMU verification
 #                      trajectories from Isaac Sim.
-# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #

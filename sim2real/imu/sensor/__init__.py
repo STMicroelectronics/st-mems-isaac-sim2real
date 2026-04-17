@@ -2,7 +2,6 @@
 # File Name          : __init__.py
 # Description        : Exports extension symbols for the sim2real IMU sensor
 #                      package.
-# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #

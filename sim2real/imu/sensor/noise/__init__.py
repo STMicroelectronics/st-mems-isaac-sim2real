@@ -2,7 +2,6 @@
 # File Name          : __init__.py
 # Description        : Exports noise backend symbols for the sim2real IMU
 #                      package.
-# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #

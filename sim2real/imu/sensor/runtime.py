@@ -2,7 +2,6 @@
 # File Name          : runtime.py
 # Description        : Physics-step runtime scheduler for ST IMU sensor ticks
 #                      and noisy sample publishing.
-# Author             : Rohit Sonawane
 # ******************************************************************************
 # @attention
 #
