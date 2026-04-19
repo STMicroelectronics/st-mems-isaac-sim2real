@@ -17,7 +17,9 @@
 import importlib
 import importlib.machinery
 import importlib.util
+import json
 import os
+import platform
 from pathlib import Path
 import sys
 
@@ -26,6 +28,16 @@ import numpy as np
 NATIVE_MODULE_NAME = "sim2real_native_v0_1"
 NATIVE_MODULE_GLOB = f"{NATIVE_MODULE_NAME}*.so"
 NATIVE_PATH_ENV_VAR = "SIM2REAL_NATIVE_PATH"
+NATIVE_MANIFEST_NAME = "manifest.json"
+
+
+def _runtime_python_version():
+    return f"{sys.version_info.major}.{sys.version_info.minor}"
+
+
+def _runtime_architecture():
+    machine = platform.machine().lower()
+    return "x86_64" if machine in ("x86_64", "amd64") else machine
 
 
 def _iter_candidate_native_paths():
@@ -53,6 +65,13 @@ def _iter_candidate_native_files():
     """Yield native module files in Python ABI preference order."""
     seen = set()
     for directory in _iter_candidate_native_paths():
+        for candidate in _iter_manifest_native_files(directory):
+            candidate_key = str(candidate.resolve())
+            if candidate_key in seen:
+                continue
+            seen.add(candidate_key)
+            yield candidate
+
         for suffix in importlib.machinery.EXTENSION_SUFFIXES:
             candidate = directory / f"{NATIVE_MODULE_NAME}{suffix}"
             if not candidate.is_file():
@@ -63,6 +82,33 @@ def _iter_candidate_native_files():
                 continue
             seen.add(candidate_key)
             yield candidate
+
+
+def _iter_manifest_native_files(directory: Path):
+    manifest_path = directory / NATIVE_MANIFEST_NAME
+    if not manifest_path.is_file():
+        return
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"[Sim2Real IMU] WARNING: Could not read native manifest {manifest_path}: {error}")
+        return
+
+    if manifest.get("module") != NATIVE_MODULE_NAME:
+        return
+
+    runtime_python = _runtime_python_version()
+    runtime_arch = _runtime_architecture()
+    for entry in manifest.get("binaries", []):
+        if str(entry.get("python", "")).strip() != runtime_python:
+            continue
+        if str(entry.get("arch", "")).strip().lower() not in ("", runtime_arch):
+            continue
+
+        native_file = directory / str(entry.get("file", ""))
+        if native_file.is_file():
+            yield native_file
 
 
 def _load_native_file(native_file: Path):

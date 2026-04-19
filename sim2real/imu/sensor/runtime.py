@@ -14,10 +14,11 @@
 #
 # ******************************************************************************
 
-import numpy as np
 import omni.physx
 import omni.timeline
 import omni.usd
+
+from .adapters import get_isaac_adapter
 
 
 class ImuSensorRuntime:
@@ -42,8 +43,14 @@ class ImuSensorRuntime:
     LAST_LIN_ACC_KEY = f"{SENSOR_METADATA_PREFIX}last_lin_acc"
     LAST_ANG_VEL_KEY = f"{SENSOR_METADATA_PREFIX}last_ang_vel"
 
-    def __init__(self, noise_backend, stage_discovery_interval_s: float = STAGE_DISCOVERY_INTERVAL_S):
+    def __init__(
+        self,
+        noise_backend,
+        stage_discovery_interval_s: float = STAGE_DISCOVERY_INTERVAL_S,
+        isaac_adapter=None,
+    ):
         self._backend = noise_backend
+        self._isaac_adapter = isaac_adapter
         self._physx_sub = None
         self._timeline = omni.timeline.get_timeline_interface()
         self._stage_discovery_interval_s = max(float(stage_discovery_interval_s), 0.1)
@@ -145,8 +152,6 @@ class ImuSensorRuntime:
         This is called once at registration, not every physics step.
         """
         try:
-            from omni.isaac.sensor import IMUSensor
-
             truth_sensor_path = f"{attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}"
             stage = omni.usd.get_context().get_stage()
             prim = stage.GetPrimAtPath(truth_sensor_path)
@@ -160,7 +165,7 @@ class ImuSensorRuntime:
                 print("        if 'imu' in str(p.GetPath()).lower(): print(p.GetPath())")
                 return
 
-            sensor = IMUSensor(prim_path=truth_sensor_path)
+            sensor = self._get_isaac_adapter().create_imu_sensor(prim_path=truth_sensor_path)
             sensor.initialize()
             self._truth_sensor_cache[sensor_prim_path] = sensor
             print(f"[Sim2Real Runtime] Cached native Isaac IMUSensor at {truth_sensor_path}")
@@ -236,13 +241,7 @@ class ImuSensorRuntime:
             # read_gravity=True: lin_acc includes gravitational specific force,
             # which is exactly what a real IMU measures and what the C++ engine expects.
             raw = sensor.get_current_frame(read_gravity=True)
-            if raw is None:
-                return None
-
-            return {
-                "lin_acc": np.array(raw["lin_acc"], dtype=float),
-                "ang_vel": np.array(raw["ang_vel"], dtype=float),
-            }
+            return self._get_isaac_adapter().normalize_imu_frame(raw) if raw is not None else None
         except Exception as error:
             print(
                 f"[Sim2Real Runtime] _read_truth_kinematics error for "
@@ -290,6 +289,11 @@ class ImuSensorRuntime:
             return ""
 
         return str(prim.GetCustomDataByKey(f"{self.SENSOR_METADATA_PREFIX}attachPrimPath") or "")
+
+    def _get_isaac_adapter(self):
+        if self._isaac_adapter is None:
+            self._isaac_adapter = get_isaac_adapter()
+        return self._isaac_adapter
 
     def _normalize_odr_hz(self, raw_odr_hz, sensor_prim_path: str) -> float:
         try:

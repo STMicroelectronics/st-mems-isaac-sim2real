@@ -6,7 +6,7 @@ authors = ["Siddharth"]
 
 [dependencies]
 "omni.kit.menu.utils" = {}
-"isaacsim.sensors.physics" = {}
+"omni.isaac.sensor" = {}
 "omni.usd" = {}
 "omni.kit.commands" = {}
 

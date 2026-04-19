@@ -21,17 +21,37 @@ import random
 
 import numpy as np
 import omni.timeline
-from omni.isaac.core.utils.types import ArticulationAction
-from omni.isaac.franka import Franka
-from omni.isaac.sensor import IMUSensor
 from omni.kit.app import get_app
 
+from sim2real.imu.sensor.adapters import get_isaac_adapter
 from sim2real.imu.sensor.noise.native_backend import NativeNoiseBackend
+
+
+def _import_first(candidates, symbol_name):
+    errors = []
+    for module_name in candidates:
+        try:
+            module = __import__(module_name, fromlist=[symbol_name])
+            return getattr(module, symbol_name)
+        except (ImportError, AttributeError) as error:
+            errors.append(f"{module_name}.{symbol_name}: {error}")
+    raise ImportError(f"Could not import {symbol_name}. Tried: {'; '.join(errors)}")
+
+
+ArticulationAction = _import_first(
+    ("isaacsim.core.utils.types", "omni.isaac.core.utils.types"),
+    "ArticulationAction",
+)
+Franka = _import_first(
+    ("isaacsim.robot.manipulators.examples.franka", "omni.isaac.franka"),
+    "Franka",
+)
+ISAAC_ADAPTER = get_isaac_adapter()
 
 
 class NoisyImuSensor:
     def __init__(self, prim_path, name="imu", seed=123, config=None):
-        self._sensor = IMUSensor(prim_path=prim_path, name=name)
+        self._sensor = ISAAC_ADAPTER.create_imu_sensor(prim_path=prim_path, name=name)
         self._timeline = omni.timeline.get_timeline_interface()
         self._prim_path = prim_path
         self._noise_backend = NativeNoiseBackend()
@@ -46,7 +66,9 @@ class NoisyImuSensor:
         self._sensor.initialize(physics_sim_view)
 
     def get_current_frame(self, read_gravity=True):
-        raw = self._sensor.get_current_frame(read_gravity=read_gravity)
+        raw = ISAAC_ADAPTER.read_imu_frame(self._sensor, read_gravity=read_gravity)
+        if raw is None:
+            return None
         current_time = self._timeline.get_current_time()
 
         result = self._noise_backend.step_sensor(
@@ -60,7 +82,7 @@ class NoisyImuSensor:
 
         if result is not None:
             return {"lin_acc": result["lin_acc"], "ang_vel": result["ang_vel"]}
-        return {"lin_acc": raw["lin_acc"], "ang_vel": raw["ang_vel"]}
+        return raw
 
     def __getattr__(self, name):
         return getattr(self._sensor, name)
@@ -173,11 +195,15 @@ def log_sample(joint_positions):
 
     current_time = timeline.get_current_time()
 
-    clean_frame = imu_clean.get_current_frame(read_gravity=True)
+    clean_frame = ISAAC_ADAPTER.read_imu_frame(imu_clean, read_gravity=True)
+    if clean_frame is None:
+        return
     clean_acc = clean_frame["lin_acc"]
     clean_vel = clean_frame["ang_vel"]
 
     noisy_frame = imu_noisy.get_current_frame(read_gravity=True)
+    if noisy_frame is None:
+        return
     noisy_acc = noisy_frame["lin_acc"]
     noisy_vel = noisy_frame["ang_vel"]
 
@@ -224,7 +250,7 @@ def update(event):
         robot.set_joints_default_state(positions=HOME, velocities=np.zeros(9))
         robot.post_reset()
 
-        imu_clean = IMUSensor(prim_path=CLEAN_IMU_PATH, name="imu_clean")
+        imu_clean = ISAAC_ADAPTER.create_imu_sensor(prim_path=CLEAN_IMU_PATH, name="imu_clean")
         imu_clean.initialize()
 
         imu_noisy = NoisyImuSensor(
