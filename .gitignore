@@ -30,7 +30,7 @@ pip-wheel-metadata/
 
 # Isaac / local binary dependencies
 sim2real_native_v0_1*.so
-!sim_binary/sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so
+!sim_binary/sim2real_native_v0_1.cpython-*-x86_64-linux-gnu.so
 *.dylib
 *.dll
 

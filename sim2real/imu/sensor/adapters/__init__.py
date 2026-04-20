@@ -1,7 +1,6 @@
 # ******************************************************************************
 # File Name          : __init__.py
-# Description        : Exports extension symbols for the sim2real IMU sensor
-#                      package.
+# Description        : Isaac Sim compatibility adapter exports.
 # ******************************************************************************
 # @attention
 #
@@ -14,10 +13,6 @@
 #
 # ******************************************************************************
 
-try:
-    from .extension import Sim2RealIMUSensorExtension, StImuSensorExtension
-except ModuleNotFoundError as error:
-    if error.name != "omni":
-        raise
-    Sim2RealIMUSensorExtension = None
-    StImuSensorExtension = None
+from .base import IsaacImuAdapter
+from .detect import get_isaac_adapter
+

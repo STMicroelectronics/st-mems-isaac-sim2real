@@ -1,0 +1,14 @@
+[package]
+title = "Sim2Real IMU Sensor"
+description = "Custom noisy IMU sensor with C++ noise engine"
+version = "2.1.0"
+authors = ["Siddharth"]
+
+[dependencies]
+"omni.kit.menu.utils" = {}
+"isaacsim.sensors.physics" = {}
+"omni.usd" = {}
+"omni.kit.commands" = {}
+
+[[python.module]]
+name = "sim2real.imu.sensor"

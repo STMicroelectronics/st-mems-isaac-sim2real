@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "module": "sim2real_native_v0_1",
+  "binaries": [
+    {
+      "file": "sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so",
+      "python": "3.12",
+      "isaac_sim": "6.0.0",
+      "os": "linux",
+      "arch": "x86_64",
+      "max_glibc": "2.34",
+      "sha1": "fcad6756736ea44804b0c23104015e96570fdd7e"
+    }
+  ]
+}

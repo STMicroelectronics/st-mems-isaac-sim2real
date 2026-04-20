@@ -31,7 +31,7 @@ from sim2real.imu.sensor.noise.native_backend import NativeNoiseBackend
  
 class NoisyImuSensor:
     def __init__(self, prim_path, name="imu", seed=123, config=None):
-        self._sensor = IMUSensor(prim_path=prim_path, name=name)
+        self._sensor = ISAAC_ADAPTER.create_imu_sensor(prim_path=prim_path, name=name)
         self._timeline = omni.timeline.get_timeline_interface()
         self._prim_path = prim_path
         self._noise_backend = NativeNoiseBackend()
@@ -46,7 +46,9 @@ class NoisyImuSensor:
         self._sensor.initialize(physics_sim_view)
  
     def get_current_frame(self, read_gravity=True):
-        raw = self._sensor.get_current_frame(read_gravity=read_gravity)
+        raw = ISAAC_ADAPTER.read_imu_frame(self._sensor, read_gravity=read_gravity)
+        if raw is None:
+            return None
         current_time = self._timeline.get_current_time()
  
         result = self._noise_backend.step_sensor(
@@ -178,6 +180,8 @@ def log_sample(joint_positions):
     clean_vel = clean_frame["angular_velocity"]
  
     noisy_frame = imu_noisy.get_current_frame(read_gravity=True)
+    if noisy_frame is None:
+        return
     noisy_acc = noisy_frame["lin_acc"]
     noisy_vel = noisy_frame["ang_vel"]
  

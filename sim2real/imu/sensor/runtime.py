@@ -14,10 +14,11 @@
 #
 # ******************************************************************************
 
-import numpy as np
 import omni.physx
 import omni.timeline
 import omni.usd
+
+from .adapters import get_isaac_adapter
 
 
 class ImuSensorRuntime:
@@ -42,8 +43,14 @@ class ImuSensorRuntime:
     LAST_LIN_ACC_KEY = f"{SENSOR_METADATA_PREFIX}last_lin_acc"
     LAST_ANG_VEL_KEY = f"{SENSOR_METADATA_PREFIX}last_ang_vel"
 
-    def __init__(self, noise_backend, stage_discovery_interval_s: float = STAGE_DISCOVERY_INTERVAL_S):
+    def __init__(
+        self,
+        noise_backend,
+        stage_discovery_interval_s: float = STAGE_DISCOVERY_INTERVAL_S,
+        isaac_adapter=None,
+    ):
         self._backend = noise_backend
+        self._isaac_adapter = isaac_adapter
         self._physx_sub = None
         self._timeline = omni.timeline.get_timeline_interface()
         self._stage_discovery_interval_s = max(float(stage_discovery_interval_s), 0.1)
@@ -160,7 +167,7 @@ class ImuSensorRuntime:
                 print("        if 'imu' in str(p.GetPath()).lower(): print(p.GetPath())")
                 return
 
-            sensor = IMUSensor(prim_path=truth_sensor_path)
+            sensor = self._get_isaac_adapter().create_imu_sensor(prim_path=truth_sensor_path)
             sensor.initialize()
             self._truth_sensor_cache[sensor_prim_path] = sensor
             print(f"[Sim2Real Runtime] Cached native Isaac IMUSensor at {truth_sensor_path}")
@@ -291,6 +298,11 @@ class ImuSensorRuntime:
             return ""
 
         return str(prim.GetCustomDataByKey(f"{self.SENSOR_METADATA_PREFIX}attachPrimPath") or "")
+
+    def _get_isaac_adapter(self):
+        if self._isaac_adapter is None:
+            self._isaac_adapter = get_isaac_adapter()
+        return self._isaac_adapter
 
     def _normalize_odr_hz(self, raw_odr_hz, sensor_prim_path: str) -> float:
         try:

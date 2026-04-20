@@ -22,13 +22,21 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 ## Requirements
 
 - **Ubuntu 22.04** (tested)
-- **Isaac Sim Full 6.0.0** with **Python 3.12** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
+- **Isaac Sim Full 6.0.0** with **Python 3.12** or **Isaac Sim Full 5.1.0** with **Python 3.10** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
 - The compiled **C++ noise engine**:
   - Bundled for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
+  - Required for Isaac Sim 5.1.0 / Python 3.10: a compatible `sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so` build.
   - Native binaries are platform-specific and must match the Python runtime and target Linux distribution.
   - Ubuntu 22.04 builds must not require a glibc version newer than the OS-provided glibc 2.35.
 
-> Version 2.x targets Isaac Sim 6.0.0 only. Older Isaac Sim releases are outside the production support scope.
+## Support Matrix
+
+| Isaac Sim | Python | Support Level | Native Backend |
+|---|---:|---|---|
+| 6.0.0 | 3.12 | Active | Bundled in `sim_binary/` |
+| 5.1.0 | 3.10 | Maintenance / customer support | Requires Ubuntu 22.04-compatible Python 3.10 backend |
+
+> The source code is shared through an Isaac adapter layer. Release packages must use the `extension.toml` that matches the target Isaac Sim version.
 
 ---
 
@@ -45,6 +53,7 @@ st-mems-isaac-sim2real/
   sim2real/
     imu/
       sensor/
+        adapters/               # Isaac 5.1 / 6.0 compatibility boundary
         __init__.py
         extension.py            # Menu registration, prim spawning
         config.py               # JSON config loader
@@ -53,7 +62,11 @@ st-mems-isaac-sim2real/
           __init__.py
           native_backend.py     # C++ pybind wrapper
   imgs/                         # Screenshots for this README
+  packaging/
+    isaac-5.1.0/extension.toml  # Isaac 5.1 dependency manifest
+    isaac-6.0.0/extension.toml  # Isaac 6.0 dependency manifest
   sim_binary/
+    manifest.json               # Native backend compatibility metadata
     sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so
   verification_script.py        # Trajectory logging script
   plot_verification.py          # Plot generator
@@ -73,6 +86,16 @@ cd st-mems-isaac-sim2real
 
 ### Step 2 — Place the extension in your Isaac Sim extensions folder
 
+Select the extension manifest that matches your Isaac Sim version:
+
+```bash
+# Isaac Sim 6.0.0
+cp packaging/isaac-6.0.0/extension.toml config/extension.toml
+
+# Isaac Sim 5.1.0
+# cp packaging/isaac-5.1.0/extension.toml config/extension.toml
+```
+
 Copy the repo contents into your Isaac Sim extensions directory:
 
 ```bash
@@ -84,7 +107,7 @@ cp -r . /path/to/isaac-sim/exts/sim2real.imu.sensor/
 
 ### Step 3 — Point Isaac Sim to the C++ engine
 
-The extension auto-discovers the bundled Python 3.12 native backend from `sim_binary/`. Set `SIM2REAL_NATIVE_PATH` only when you need to override the bundled backend with another Isaac Sim 6.0.0-compatible build:
+The extension auto-discovers compatible native backends from `sim_binary/` using `sim_binary/manifest.json`. Set `SIM2REAL_NATIVE_PATH` only when you need to override the bundled backend with another compatible build:
 
 ```bash
 export SIM2REAL_NATIVE_PATH="/path/to/custom/native/backend"
@@ -205,7 +228,7 @@ Confirm all files are present including `noise/__init__.py`.
 
 **C++ backend fails to load**
 - If you set `SIM2REAL_NATIVE_PATH`, verify it points to the folder containing a compatible `sim2real_native_v0_1*.so`
-- Confirm the `.so` matches Python 3.12 and the Isaac Sim 6.0.0 runtime
+- Confirm the `.so` matches the Python version bundled with your Isaac Sim runtime
 - If the error mentions `GLIBC_x.y not found`, do not manually upgrade system glibc. Use a backend rebuilt on the target OS/version instead.
 
 **Menu shows but cube is not visible in viewport**
@@ -230,7 +253,7 @@ print("Visual prim exists:", prim.IsValid())
 
 | Component | Version |
 |---|---|
-| Isaac Sim | 6.0.0 |
+| Isaac Sim | 6.0.0 active; 5.1.0 maintenance |
 | Ubuntu | 22.04 |
-| Python | 3.12 |
+| Python | 3.12; 3.10 with compatible native backend |
 | GPU | NVIDIA GeForce RTX 3060 |
