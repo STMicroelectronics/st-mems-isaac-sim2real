@@ -25,7 +25,7 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 - **Isaac Sim Full 6.0.0** with **Python 3.12** or **Isaac Sim Full 5.1.0** with **Python 3.10** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
 - The compiled **C++ noise engine**:
   - Bundled for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
-  - Required for Isaac Sim 5.1.0 / Python 3.10: a compatible `sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so` build.
+  - Bundled for Isaac Sim 5.1.0 / Python 3.10: `sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so`
   - Native binaries are platform-specific and must match the Python runtime and target Linux distribution.
   - Ubuntu 22.04 builds must not require a glibc version newer than the OS-provided glibc 2.35.
 
@@ -34,7 +34,7 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 | Isaac Sim | Python | Support Level | Native Backend |
 |---|---:|---|---|
 | 6.0.0 | 3.12 | Active | Bundled in `sim_binary/` |
-| 5.1.0 | 3.10 | Maintenance / customer support | Requires Ubuntu 22.04-compatible Python 3.10 backend |
+| 5.1.0 | 3.10 | Maintenance / customer support | Bundled in `sim_binary/` |
 
 > The source code is shared through an Isaac adapter layer. Release packages must use the `extension.toml` that matches the target Isaac Sim version.
 
@@ -67,6 +67,7 @@ st-mems-isaac-sim2real/
     isaac-6.0.0/extension.toml  # Isaac 6.0 dependency manifest
   sim_binary/
     manifest.json               # Native backend compatibility metadata
+    sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so
     sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so
   verification_script.py        # Trajectory logging script
   plot_verification.py          # Plot generator
@@ -255,5 +256,5 @@ print("Visual prim exists:", prim.IsValid())
 |---|---|
 | Isaac Sim | 6.0.0 active; 5.1.0 maintenance |
 | Ubuntu | 22.04 |
-| Python | 3.12; 3.10 with compatible native backend |
+| Python | 3.12; 3.10 |
 | GPU | NVIDIA GeForce RTX 3060 |
