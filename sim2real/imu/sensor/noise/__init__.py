@@ -1,6 +1,6 @@
 # ******************************************************************************
 # File Name          : __init__.py
-# Description        : Exports noise backend symbols for the sim2real IMU
+# Description        : Exports native backend symbols for the sim2real IMU
 #                      package.
 # ******************************************************************************
 # @attention

@@ -1,7 +1,7 @@
 # ******************************************************************************
 # File Name          : runtime.py
 # Description        : Physics-step runtime scheduler for ST IMU sensor ticks
-#                      and noisy sample publishing.
+#                      and realistic sample publishing.
 # ******************************************************************************
 # @attention
 #
@@ -29,9 +29,9 @@ class ImuSensorRuntime:
     Data flow per tick:
         Native Isaac IMUSensor (clean physics truth)
                     ->
-          C++ noise engine (Native backend wrapper)
+          C++ sensor-realism backend (native wrapper)
                     ->
-          Custom sim2real prim (stores noisy result as custom data)
+          Custom sim2real prim (stores realistic result as custom data)
     """
 
     DEFAULT_ODR_HZ = 100.0
@@ -213,13 +213,21 @@ class ImuSensorRuntime:
         truth_kinematics = self._read_truth_kinematics(sensor_prim_path)
 
         if hasattr(self._backend, "step_sensor"):
-            noisy_kinematics = self._backend.step_sensor(sensor_prim_path, sim_time, truth_kinematics)
+            realistic_kinematics = self._backend.step_sensor(
+                sensor_prim_path,
+                sim_time,
+                truth_kinematics,
+            )
         else:
-            noisy_kinematics = self._backend.step(sensor_prim_path, sim_time, truth_kinematics)
+            realistic_kinematics = self._backend.step(
+                sensor_prim_path,
+                sim_time,
+                truth_kinematics,
+            )
 
-        if noisy_kinematics is not None:
-            lin_acc = noisy_kinematics.get("lin_acc")
-            ang_vel = noisy_kinematics.get("ang_vel")
+        if realistic_kinematics is not None:
+            lin_acc = realistic_kinematics.get("lin_acc")
+            ang_vel = realistic_kinematics.get("ang_vel")
             if lin_acc is not None:
                 prim.SetCustomDataByKey(self.LAST_LIN_ACC_KEY, list(lin_acc))
             if ang_vel is not None:

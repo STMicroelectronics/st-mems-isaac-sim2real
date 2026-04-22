@@ -2,13 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
-## [v2.1.0] - Unreleased
+## [v2.1.0] - 2026-04-21
 - Added Isaac Sim adapter layer so Isaac API changes stay isolated from the Sim2Real runtime.
 - Added Isaac Sim 5.1.0 and 6.0.0 extension manifest templates under `packaging/`.
 - Added native backend manifest metadata under `sim_binary/`.
 - Added Ubuntu 22.04-compatible Python 3.10 native backend for Isaac Sim 5.1.0.
 - Updated verification script to use the shared Isaac adapter boundary.
+- Updated public-facing terminology from noisy IMU to realistic Sim2Real IMU.
 - Restored dual-version support policy: Isaac Sim 6.0.0 active support, Isaac Sim 5.1.0 maintenance/customer support.
+- Validated end-to-end in Isaac Sim 5.1.0 and Isaac Sim 6.0.0.
 
 ## [v2.0.0] - 2026-04-16
 - Breaking release: standardized production support on Isaac Sim 6.0.0 with Python 3.12.

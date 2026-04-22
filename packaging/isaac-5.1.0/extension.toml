@@ -1,6 +1,6 @@
 [package]
 title = "Sim2Real IMU Sensor"
-description = "Custom noisy IMU sensor with C++ noise engine"
+description = "Custom realistic IMU sensor with C++ sensor-realism engine"
 version = "2.1.0"
 authors = ["Siddharth"]
 

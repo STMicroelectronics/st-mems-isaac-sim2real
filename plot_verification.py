@@ -1,6 +1,6 @@
 # ******************************************************************************
 # File Name          : plot_verification.py
-# Description        : Plotting utility for comparing clean and noisy IMU
+# Description        : Plotting utility for comparing clean and realistic IMU
 #                      verification trajectories.
 # ******************************************************************************
 # @attention
@@ -25,22 +25,27 @@ DATA_DIR = os.path.expanduser("~/Documents/trajectories_verification")
 def plot_verification(traj_path):
     # Prefer the new naming convention and fall back to legacy names.
     clean_files = glob.glob(os.path.join(traj_path, "clean_imu_*.csv"))
-    noisy_files = glob.glob(os.path.join(traj_path, "noisy_imu_*.csv"))
-    if not noisy_files:
-        noisy_files = glob.glob(os.path.join(traj_path, "gui_imu_*.csv"))
+    realistic_files = glob.glob(os.path.join(traj_path, "realistic_imu_*.csv"))
+    if not realistic_files:
+        realistic_files = glob.glob(os.path.join(traj_path, "noisy_imu_*.csv"))
+    if not realistic_files:
+        realistic_files = glob.glob(os.path.join(traj_path, "gui_imu_*.csv"))
 
-    if not clean_files or not noisy_files:
+    if not clean_files or not realistic_files:
         print(f"Skipping {traj_path}: Missing CSV files.")
-        print("  Expected: clean_imu_*.csv and noisy_imu_*.csv (or legacy gui_imu_*.csv)")
+        print(
+            "  Expected: clean_imu_*.csv and realistic_imu_*.csv "
+            "(or legacy noisy_imu_*.csv/gui_imu_*.csv)"
+        )
         return
 
     # Load Data
     df_clean = pd.read_csv(clean_files[0])
-    df_noisy = pd.read_csv(noisy_files[0])
+    df_realistic = pd.read_csv(realistic_files[0])
 
     # Normalize Time (start at 0)
     t_clean = df_clean['time'] - df_clean['time'].iloc[0]
-    t_noisy = df_noisy['time'] - df_noisy['time'].iloc[0]
+    t_realistic = df_realistic['time'] - df_realistic['time'].iloc[0]
 
     # Setup Figure (3x2 Grid)
     fig, axes = plt.subplots(3, 2, figsize=(15, 10), sharex=True)
@@ -58,14 +63,14 @@ def plot_verification(traj_path):
     for title, col, unit, (row, col_idx) in plots:
         ax = axes[row, col_idx]
 
-        # Plot noisy trace first so clean trace stays visible on top.
+        # Plot realistic trace first so clean trace stays visible on top.
         ax.plot(
-            t_noisy,
-            df_noisy[col],
+            t_realistic,
+            df_realistic[col],
             "r-",
             alpha=0.5,
             linewidth=1.0,
-            label="Noisy Sensor (ASM330LHH)",
+            label="Realistic Sim2Real IMU (ASM330LHH)",
         )
 
         # Plot Clean on top

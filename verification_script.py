@@ -1,6 +1,6 @@
 # ******************************************************************************
 # File Name          : verification_script.py
-# Description        : Script to generate clean vs noisy IMU verification
+# Description        : Script to generate clean vs realistic IMU verification
 #                      trajectories from Isaac Sim.
 # ******************************************************************************
 # @attention
@@ -49,7 +49,7 @@ Franka = _import_first(
 ISAAC_ADAPTER = get_isaac_adapter()
 
 
-class NoisyImuSensor:
+class RealisticImuSensor:
     def __init__(self, prim_path, name="imu", seed=123, config=None):
         self._sensor = ISAAC_ADAPTER.create_imu_sensor(prim_path=prim_path, name=name)
         self._timeline = omni.timeline.get_timeline_interface()
@@ -58,7 +58,7 @@ class NoisyImuSensor:
 
         if config:
             self._noise_backend.register_sensor(prim_path, config, seed=seed)
-            print(f"C++ Config Applied via NativeNoiseBackend: {config}")
+            print(f"C++ sensor-realism config applied: {config}")
         else:
             self._noise_backend.register_sensor(prim_path, {}, seed=seed)
 
@@ -88,15 +88,16 @@ class NoisyImuSensor:
         return getattr(self._sensor, name)
 
 
-# Backward-compatible wrapper class name used in older docs/scripts.
-Sim2RealIMUSensor = NoisyImuSensor
+# Backward-compatible wrapper class names used in older docs/scripts.
+NoisyImuSensor = RealisticImuSensor
+Sim2RealIMUSensor = RealisticImuSensor
 
 
 ROBOT_PATH = "/World/franka"
 
 # Both sensors read from the same native Isaac physics IMU prim.
 CLEAN_IMU_PATH = "/World/franka/panda_hand/Imu_Sensor"
-NOISY_IMU_PATH = "/World/franka/panda_hand/Imu_Sensor"
+REALISTIC_IMU_PATH = "/World/franka/panda_hand/Imu_Sensor"
 
 OUTPUT_DIR = os.path.expanduser("~/Documents/trajectories_verification")
 
@@ -112,8 +113,8 @@ HOME = np.array(
     [0.000167, -0.786, 4.01e-5, -2.35502, 9.29e-5, 1.571, 0.786, 0.04, 0.04]
 )
 
-# Noise config for ASM330LHH profile
-NOISE_CONFIG = {
+# Sensor-realism config for ASM330LHH profile
+SENSOR_REALISM_CONFIG = {
     "accel_fs_g": 8.0,
     "gyro_fs_dps": 2000.0,
     "odr_hz": 104.0,
@@ -124,7 +125,7 @@ NOISE_CONFIG = {
 # Runtime state
 robot = None
 imu_clean = None
-imu_noisy = None
+imu_realistic = None
 timeline = omni.timeline.get_timeline_interface()
 
 frame = 0
@@ -136,8 +137,8 @@ targets = []
 # Log handles
 file_clean = None
 writer_clean = None
-file_noisy = None
-writer_noisy = None
+file_realistic = None
+writer_realistic = None
 
 CSV_HEADER = [
     "time",
@@ -172,7 +173,7 @@ def gen_target():
 
 
 def start_log():
-    global file_clean, writer_clean, file_noisy, writer_noisy
+    global file_clean, writer_clean, file_realistic, writer_realistic
 
     trajectory_folder = os.path.join(OUTPUT_DIR, f"traj_{trajectory_index}")
     os.makedirs(trajectory_folder, exist_ok=True)
@@ -182,15 +183,15 @@ def start_log():
     writer_clean = csv.writer(file_clean)
     writer_clean.writerow(CSV_HEADER)
 
-    noisy_csv_path = os.path.join(trajectory_folder, f"noisy_imu_{trajectory_index}.csv")
-    file_noisy = open(noisy_csv_path, "w", newline="")
-    writer_noisy = csv.writer(file_noisy)
-    writer_noisy.writerow(CSV_HEADER)
+    realistic_csv_path = os.path.join(trajectory_folder, f"realistic_imu_{trajectory_index}.csv")
+    file_realistic = open(realistic_csv_path, "w", newline="")
+    writer_realistic = csv.writer(file_realistic)
+    writer_realistic.writerow(CSV_HEADER)
 
 
 def log_sample(joint_positions):
-    global writer_clean, writer_noisy
-    if not (imu_clean and imu_noisy and writer_clean and writer_noisy):
+    global writer_clean, writer_realistic
+    if not (imu_clean and imu_realistic and writer_clean and writer_realistic):
         return
 
     current_time = timeline.get_current_time()
@@ -201,11 +202,11 @@ def log_sample(joint_positions):
     clean_acc = clean_frame["lin_acc"]
     clean_vel = clean_frame["ang_vel"]
 
-    noisy_frame = imu_noisy.get_current_frame(read_gravity=True)
-    if noisy_frame is None:
+    realistic_frame = imu_realistic.get_current_frame(read_gravity=True)
+    if realistic_frame is None:
         return
-    noisy_acc = noisy_frame["lin_acc"]
-    noisy_vel = noisy_frame["ang_vel"]
+    realistic_acc = realistic_frame["lin_acc"]
+    realistic_vel = realistic_frame["ang_vel"]
 
     writer_clean.writerow(
         [current_time]
@@ -213,30 +214,37 @@ def log_sample(joint_positions):
         + [clean_acc[2], -1 * clean_acc[1], clean_acc[0], clean_vel[2], -1 * clean_vel[1], clean_vel[0]]
     )
 
-    writer_noisy.writerow(
+    writer_realistic.writerow(
         [current_time]
         + list(joint_positions[:9])
-        + [noisy_acc[2], -1 * noisy_acc[1], noisy_acc[0], noisy_vel[2], -1 * noisy_vel[1], noisy_vel[0]]
+        + [
+            realistic_acc[2],
+            -1 * realistic_acc[1],
+            realistic_acc[0],
+            realistic_vel[2],
+            -1 * realistic_vel[1],
+            realistic_vel[0],
+        ]
     )
 
     file_clean.flush()
-    file_noisy.flush()
+    file_realistic.flush()
 
 
 def close_log():
-    global file_clean, writer_clean, file_noisy, writer_noisy
+    global file_clean, writer_clean, file_realistic, writer_realistic
     if file_clean:
         file_clean.close()
-    if file_noisy:
-        file_noisy.close()
+    if file_realistic:
+        file_realistic.close()
     file_clean = None
     writer_clean = None
-    file_noisy = None
-    writer_noisy = None
+    file_realistic = None
+    writer_realistic = None
 
 
 def update(event):
-    global robot, imu_clean, imu_noisy, frame, phase, trajectory_index, time_in_phase, targets
+    global robot, imu_clean, imu_realistic, frame, phase, trajectory_index, time_in_phase, targets
 
     if not timeline.is_playing():
         return
@@ -253,18 +261,18 @@ def update(event):
         imu_clean = ISAAC_ADAPTER.create_imu_sensor(prim_path=CLEAN_IMU_PATH, name="imu_clean")
         imu_clean.initialize()
 
-        imu_noisy = NoisyImuSensor(
-            prim_path=NOISY_IMU_PATH,
-            name="imu_noisy",
+        imu_realistic = RealisticImuSensor(
+            prim_path=REALISTIC_IMU_PATH,
+            name="imu_realistic",
             seed=123,
-            config=NOISE_CONFIG,
+            config=SENSOR_REALISM_CONFIG,
         )
-        imu_noisy.initialize()
+        imu_realistic.initialize()
 
         targets = [gen_target() for _ in range(NUM_TRAJECTORIES)]
         print(f"VERIFICATION MODE: Logging to {OUTPUT_DIR}")
         print(f"  Clean sensor: {CLEAN_IMU_PATH}")
-        print(f"  Noisy sensor: {NOISY_IMU_PATH} (+ C++ noise)")
+        print(f"  Realistic Sim2Real sensor: {REALISTIC_IMU_PATH} (+ C++ sensor effects)")
         return
 
     if phase == "startup":

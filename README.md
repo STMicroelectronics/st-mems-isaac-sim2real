@@ -1,6 +1,6 @@
 # Nvidia Isaac Sim Extension for STMicroelectronics Sensors
 
-A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models directly into the `Create → Sensors` menu. Spawns a physics-driven, noise-augmented IMU prim with a visible viewport marker.
+A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models directly into the `Create → Sensors` menu. Spawns a physics-driven, realistic IMU prim with a visible viewport marker.
 
 ![Preview](imgs/preview.png)
 
@@ -16,14 +16,14 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 - ✅ Auto-attaches to whichever prim is selected in the Stage panel
 - ✅ Visible dark navy cube marker in the viewport
 - ✅ Physics-step driven runtime ticks each IMU at its configured ODR, independent of render rate
-- ✅ Realistic noise model
+- ✅ Realistic IMU response model with sensor noise, bias drift, and quantization effects
 - ✅ Verified against clean Isaac IMU output via included verification scripts
 
 ## Requirements
 
 - **Ubuntu 22.04** (tested)
 - **Isaac Sim Full 6.0.0** with **Python 3.12** or **Isaac Sim Full 5.1.0** with **Python 3.10** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
-- The compiled **C++ noise engine**:
+- The compiled **C++ sensor-realism engine**:
   - Bundled for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
   - Bundled for Isaac Sim 5.1.0 / Python 3.10: `sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so`
   - Native binaries are platform-specific and must match the Python runtime and target Linux distribution.
@@ -48,8 +48,8 @@ st-mems-isaac-sim2real/
     extension.toml              # Extension metadata and dependencies
   data/
     models/
-      ASM330LHH.json            # ASM330LHH noise profile and hardware config
-      LSM6DSV.json              # LSM6DSV noise profile and hardware config
+      ASM330LHH.json            # ASM330LHH sensor-realism profile and hardware config
+      LSM6DSV.json              # LSM6DSV sensor-realism profile and hardware config
   sim2real/
     imu/
       sensor/
@@ -152,13 +152,13 @@ export SIM2REAL_NATIVE_PATH="/path/to/custom/native/backend"
 
 ![Properties Panel](imgs/properties_panel.png)
 
-6. Press **Play** — the noise engine ticks automatically at the sensor's configured ODR
+6. Press **Play** — the Sim2Real engine ticks automatically at the sensor's configured ODR
 
 ---
 
 ## Sensor Configuration
 
-Each model's noise profile lives in `data/models/<model>.json`. Edit these files to tune the sensor — **no code changes required**.
+Each model's sensor-realism profile lives in `data/models/<model>.json`. Edit these files to tune the sensor — **no code changes required**.
 
 ```json
 {
@@ -195,7 +195,7 @@ MenuItemDescription(
 
 ## Verification
 
-Included scripts let you validate the noise pipeline against clean Isaac IMU output.
+Included scripts let you validate the Sim2Real IMU response against clean Isaac IMU output.
 
 ### Run the verification script
 
@@ -211,11 +211,11 @@ Included scripts let you validate the noise pipeline against clean Isaac IMU out
 python3 plot_verification.py
 ```
 
-Each `traj_N/` folder gets a `verification_plot.png` showing clean vs noisy IMU output across all 6 axes:
+Each `traj_N/` folder gets a `verification_plot.png` showing clean Isaac output vs realistic Sim2Real IMU output across all 6 axes:
 
 ![Verification Plot](imgs/verification_plot.png)
 
-The noisy trace (red) should follow the clean motion profile (black dashed) with visible noise and bias drift on top.
+The Sim2Real trace (red) should follow the clean motion profile (black dashed) with realistic sensor effects, including noise and bias drift.
 
 ---
 
@@ -243,7 +243,7 @@ prim = stage.GetPrimAtPath("/World/franka/panda_hand/ASM330LHH/visual")
 print("Visual prim exists:", prim.IsValid())
 ```
 
-**Noise profile looks too clean or too aggressive**
+**Realistic IMU profile looks too clean or too aggressive**
 - Edit `data/models/ASM330LHH.json` directly
 - Delete and re-place the sensor prim to pick up the new values
 - Rerun `verification_script.py` and `plot_verification.py` to verify

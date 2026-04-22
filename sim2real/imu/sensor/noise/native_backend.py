@@ -154,7 +154,7 @@ else:
         f"[Sim2Real IMU] Set {NATIVE_PATH_ENV_VAR} to the directory containing "
         f"{NATIVE_MODULE_GLOB} if needed."
     )
-    print("[Sim2Real IMU] IMU prims will be registered but noise will not be applied.")
+    print("[Sim2Real IMU] IMU prims will be registered but sensor-realism effects will not be applied.")
 
 
 class NativeNoiseBackend:
@@ -188,7 +188,7 @@ class NativeNoiseBackend:
 
     def step_sensor(self, sensor_prim_path: str, sim_time: float, truth_kinematics: dict | None):
         """
-        Run one noise step for this prim.
+        Run one sensor-realism step for this prim.
         truth_kinematics: dict with keys 'lin_acc' and 'ang_vel' (arrays, shape [3])
                           If None (truth not yet available), returns None.
         Returns dict with 'lin_acc' and 'ang_vel', or None.
