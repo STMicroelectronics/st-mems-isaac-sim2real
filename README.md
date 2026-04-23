@@ -22,10 +22,10 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 ## Requirements
 
 - **Ubuntu 22.04** (tested)
-- **Isaac Sim Full 6.0.0** with **Python 3.12** or **Isaac Sim Full 5.1.0** with **Python 3.10** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
+- **Isaac Sim Full 6.0.0** with **Python 3.12** or **Isaac Sim Full 5.1.0** with **Python 3.11** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
 - The compiled **C++ sensor-realism engine**:
   - Bundled for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
-  - Bundled for Isaac Sim 5.1.0 / Python 3.10: `sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so`
+  - Bundled for Isaac Sim 5.1.0 / Python 3.11: `sim2real_native.cpython-311-x86_64-linux-gnu.so`
   - Native binaries are platform-specific and must match the Python runtime and target Linux distribution.
   - Ubuntu 22.04 builds must not require a glibc version newer than the OS-provided glibc 2.35.
 
@@ -34,7 +34,7 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 | Isaac Sim | Python | Support Level | Native Backend |
 |---|---:|---|---|
 | 6.0.0 | 3.12 | Active | Bundled in `sim_binary/` |
-| 5.1.0 | 3.10 | Maintenance / customer support | Bundled in `sim_binary/` |
+| 5.1.0 | 3.11 | Maintenance / customer support | Bundled in `sim_binary/` |
 
 > The source code is shared through an Isaac adapter layer. Release packages must use the `extension.toml` that matches the target Isaac Sim version.
 
@@ -67,7 +67,7 @@ st-mems-isaac-sim2real/
     isaac-6.0.0/extension.toml  # Isaac 6.0 dependency manifest
   sim_binary/
     manifest.json               # Native backend compatibility metadata
-    sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so
+    sim2real_native.cpython-311-x86_64-linux-gnu.so
     sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so
   verification_script.py        # Trajectory logging script
   plot_verification.py          # Plot generator
@@ -106,13 +106,21 @@ cp -r . /path/to/isaac-sim/exts/sim2real.imu.sensor/
 > The destination folder must be registered as an extension search path in Isaac Sim.
 > To check or add paths: **Window → Extensions → ⚙️ (gear icon) → Extension Search Paths**
 
-### Step 3 — Point Isaac Sim to the C++ engine
+### Step 3 — Validate the environment
 
 The extension auto-discovers compatible native backends from `sim_binary/` using `sim_binary/manifest.json`. Set `SIM2REAL_NATIVE_PATH` only when you need to override the bundled backend with another compatible build:
 
 ```bash
 export SIM2REAL_NATIVE_PATH="/path/to/custom/native/backend"
 ```
+
+Run the diagnostic from the target Isaac Sim Python environment before enabling the extension:
+
+```bash
+./python.sh -m sim2real.imu.sensor.diagnostics --verbose
+```
+
+The diagnostic must report `Overall: PASS`. If it reports `FAIL`, the output lists the runtime Python version, expected native backend filename, searched directories, discovered binaries, and exact rejection reason.
 
 ### Step 4 — Enable the extension
 
@@ -228,7 +236,11 @@ find /path/to/exts/sim2real.imu.sensor -type f
 Confirm all files are present including `noise/__init__.py`.
 
 **C++ backend fails to load**
-- If you set `SIM2REAL_NATIVE_PATH`, verify it points to the folder containing a compatible `sim2real_native_v0_1*.so`
+- Run the environment diagnostic from Isaac's Python:
+```bash
+./python.sh -m sim2real.imu.sensor.diagnostics --verbose
+```
+- If you set `SIM2REAL_NATIVE_PATH`, verify it points to the folder or file containing a compatible `sim2real_native*.so`
 - Confirm the `.so` matches the Python version bundled with your Isaac Sim runtime
 - If the error mentions `GLIBC_x.y not found`, do not manually upgrade system glibc. Use a backend rebuilt on the target OS/version instead.
 
@@ -256,5 +268,25 @@ print("Visual prim exists:", prim.IsValid())
 |---|---|
 | Isaac Sim | 6.0.0 active; 5.1.0 maintenance |
 | Ubuntu | 22.04 |
-| Python | 3.12; 3.10 |
+| Python | 3.12; 3.11 |
 | GPU | NVIDIA GeForce RTX 3060 |
+
+---
+
+## Development And Release Discipline
+
+- Use an isolated Python environment for local tooling: Conda, `venv`, or Isaac's bundled Python.
+- Do not run release validation from system Python unless explicitly using `--allow-system-python` in CI.
+- Use compatibility-specific branches for changes that touch Isaac, Python, Ubuntu, glibc, or native backend behavior:
+```text
+hotfix/isaac-5.1-python311-diagnostics
+compat/isaac-6.0-python312-ubuntu22-glibc234
+release/v2.1.1
+```
+- Branch names must encode the compatibility axis being changed when relevant: Isaac version, Python ABI, Ubuntu version, glibc floor, or native backend module name.
+- Before tagging a release, run:
+```bash
+python packaging/validate_manifest.py
+python packaging/validate_release_zip.py --isaac 5.1.0 path/to/sim2real-imu-isaac-5.1.0-vX.Y.Z.zip
+python packaging/validate_release_zip.py --isaac 6.0.0 path/to/sim2real-imu-isaac-6.0.0-vX.Y.Z.zip
+```

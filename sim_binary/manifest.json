@@ -1,23 +1,25 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "module": "sim2real_native_v0_1",
   "binaries": [
     {
-      "file": "sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so",
-      "python": "3.10",
+      "file": "sim2real_native.cpython-311-x86_64-linux-gnu.so",
+      "module": "sim2real_native",
+      "python": "3.11",
       "isaac_sim": "5.1.0",
       "os": "linux",
       "arch": "x86_64",
-      "max_glibc": "2.34",
-      "sha1": "a98b5a0e47ce034505576319692296c1f40b4196"
+      "min_glibc": "2.34",
+      "sha1": "3fa931cf4c31a2b24fa98a8030b4dd79c5b98006"
     },
     {
       "file": "sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so",
+      "module": "sim2real_native_v0_1",
       "python": "3.12",
       "isaac_sim": "6.0.0",
       "os": "linux",
       "arch": "x86_64",
-      "max_glibc": "2.34",
+      "min_glibc": "2.34",
       "sha1": "fcad6756736ea44804b0c23104015e96570fdd7e"
     }
   ]

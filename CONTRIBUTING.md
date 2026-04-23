@@ -38,3 +38,16 @@ Please note that:
 * We recommend to engage first a communication thru an issue, in order to present your proposal. Just to confirm that it corresponds to STMicroelectronics domain or scope.
 * Then fork the project to your GitHub account to further develop your contribution. Please use the latest commit version.
 * Please, submit one Pull Request for one new feature or proposal. This will ease the analysis and the final merge if accepted.
+
+### 4. Compatibility branches and environment validation
+
+This repository includes Isaac Sim version-specific Python code paths and native
+backend binaries. Contributions that touch Isaac Sim, Python ABI, Ubuntu, glibc,
+or native backend loading must follow the compatibility branching policy in
+`BRANCHING.md`.
+
+Before submitting a pull request:
+- [ ] Use an isolated Python environment: Isaac's bundled Python, Conda, or `venv`.
+- [ ] Run `python packaging/validate_manifest.py` if native backend metadata changed.
+- [ ] Run `./python.sh -m sim2real.imu.sensor.diagnostics --verbose` inside each affected Isaac Sim runtime.
+- [ ] Include the diagnostic output in the pull request when compatibility behavior changed.
