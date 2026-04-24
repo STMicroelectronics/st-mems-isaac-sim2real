@@ -3,7 +3,7 @@
 All notable changes to this project are documented in this file.
 
 ## [v2.1.1] - Unreleased
-- Corrected Isaac Sim 5.1.0 support to Python 3.11 and added the matching native backend.
+- Corrected Isaac Sim 5.1.0 support to Python 3.11 and added the canonical `sim2real_native_v0_1` native backend.
 - Added release-grade native backend diagnostics with Python ABI, glibc, search path, manifest, and import/smoke-test reporting.
 - Added release validation scripts for native manifest and Isaac-versioned ZIP packages.
 - Replaced deprecated `max_glibc` manifest metadata with `min_glibc`.

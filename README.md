@@ -25,7 +25,7 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 - **Isaac Sim Full 6.0.0** with **Python 3.12** or **Isaac Sim Full 5.1.0** with **Python 3.11** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
 - The compiled **C++ sensor-realism engine**:
   - Bundled for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
-  - Bundled for Isaac Sim 5.1.0 / Python 3.11: `sim2real_native.cpython-311-x86_64-linux-gnu.so`
+  - Bundled for Isaac Sim 5.1.0 / Python 3.11: `sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so`
   - Native binaries are platform-specific and must match the Python runtime and target Linux distribution.
   - Ubuntu 22.04 builds must not require a glibc version newer than the OS-provided glibc 2.35.
 
@@ -67,7 +67,7 @@ st-mems-isaac-sim2real/
     isaac-6.0.0/extension.toml  # Isaac 6.0 dependency manifest
   sim_binary/
     manifest.json               # Native backend compatibility metadata
-    sim2real_native.cpython-311-x86_64-linux-gnu.so
+    sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so
     sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so
   verification_script.py        # Trajectory logging script
   plot_verification.py          # Plot generator

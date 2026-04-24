@@ -3,14 +3,14 @@
   "module": "sim2real_native_v0_1",
   "binaries": [
     {
-      "file": "sim2real_native.cpython-311-x86_64-linux-gnu.so",
-      "module": "sim2real_native",
+      "file": "sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so",
+      "module": "sim2real_native_v0_1",
       "python": "3.11",
       "isaac_sim": "5.1.0",
       "os": "linux",
       "arch": "x86_64",
       "min_glibc": "2.34",
-      "sha1": "3fa931cf4c31a2b24fa98a8030b4dd79c5b98006"
+      "sha1": "dcf0a9bdab3ce6146291d29900439dee6ce431ca"
     },
     {
       "file": "sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so",

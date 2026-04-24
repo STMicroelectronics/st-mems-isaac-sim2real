@@ -27,9 +27,16 @@ from sim2real.imu.sensor.noise import native_backend
 
 
 class NativeBackendDiagnosticsTests(unittest.TestCase):
-    def _write_manifest_fixture(self, root: Path, *, use_deprecated_glibc=False):
-        binary = root / "sim2real_native.cpython-311-x86_64-linux-gnu.so"
-        binary.write_bytes(b"ELF\0PyInit_sim2real_native\0Sim2RealCore\0")
+    def _write_manifest_fixture(
+        self,
+        root: Path,
+        *,
+        use_deprecated_glibc=False,
+        filename="sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so",
+        module_name="sim2real_native_v0_1",
+    ):
+        binary = root / filename
+        binary.write_bytes(f"ELF\0PyInit_{module_name}\0Sim2RealCore\0".encode("ascii"))
         glibc_field = "max_glibc" if use_deprecated_glibc else "min_glibc"
         manifest = {
             "schema_version": 2,
@@ -37,7 +44,7 @@ class NativeBackendDiagnosticsTests(unittest.TestCase):
             "binaries": [
                 {
                     "file": binary.name,
-                    "module": "sim2real_native",
+                    "module": module_name,
                     "python": "3.11",
                     "isaac_sim": "5.1.0",
                     "os": "linux",
@@ -79,7 +86,7 @@ class NativeBackendDiagnosticsTests(unittest.TestCase):
                 diagnostics = native_backend.get_native_backend_diagnostics()
         self.assertTrue(diagnostics["compatible"])
         self.assertEqual(len(diagnostics["accepted_candidates"]), 1)
-        self.assertEqual(diagnostics["accepted_candidates"][0]["module"], "sim2real_native")
+        self.assertEqual(diagnostics["accepted_candidates"][0]["module"], "sim2real_native_v0_1")
 
     def test_missing_abi_reports_available_versions(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -117,6 +124,19 @@ class NativeBackendDiagnosticsTests(unittest.TestCase):
                 diagnostics = native_backend.get_native_backend_diagnostics()
         self.assertTrue(diagnostics["compatible"])
         self.assertEqual(diagnostics["accepted_candidates"][0]["path"], str(binary))
+
+    def test_legacy_module_name_remains_supported_via_manifest(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_manifest_fixture(
+                root,
+                filename="sim2real_native.cpython-311-x86_64-linux-gnu.so",
+                module_name="sim2real_native",
+            )
+            with self._patch_runtime(root, "3.11"):
+                diagnostics = native_backend.get_native_backend_diagnostics()
+        self.assertTrue(diagnostics["compatible"])
+        self.assertEqual(diagnostics["accepted_candidates"][0]["module"], "sim2real_native")
 
     def test_deprecated_max_glibc_warns(self):
         with tempfile.TemporaryDirectory() as temp_dir:
