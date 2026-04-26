@@ -32,14 +32,15 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 
 ## Support Matrix
 
-| Isaac Sim | Python | Support Level | Native Backend |
-|---|---:|---|---|
-| 5.1.0 | 3.11 | Stable production baseline on `main` | Bundled in `sim_binary/` |
-| 6.0.0 Early Developer Release | 3.12 | Experimental, isolated branch only | Use `experimental/isaac-sim-6.0.0-early-developer-release-python-3.12` |
+| Line | Isaac Sim | Python | Support Level | Native Backend |
+|---|---:|---:|---|---|
+| Stable support / production line | 5.1.0 | 3.11 | Stable production baseline on `main` | `sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so` |
+| Experimental branch only | 6.0.0 Early Developer Release | 3.12 | Experimental, isolated branch only | `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so` on `experimental/isaac-sim-6.0.0-early-developer-release-python-3.12` |
+| Historical tag `v2.1.0` | 5.1.0 | 3.10 | Historical tagged asset set, superseded | `sim2real_native_v0_1.cpython-310-x86_64-linux-gnu.so` in the `v2.1.0` release assets |
 
-> This support matrix reflects the assets currently bundled on `main` and described by `sim_binary/manifest.json`.
-> Historical `v2.1.0` release notes referenced Isaac Sim 5.1.0 / Python 3.10. The current branch and upcoming hotfix assets use Isaac Sim 5.1.0 / Python 3.11 instead.
-> `main` must track the most stable NVIDIA Isaac Sim release that ST has validated for customers. At this time that baseline is Isaac Sim 5.1.0, not Isaac Sim 6.0.0 Early Developer Release.
+> The current `sim_binary/manifest.json` on the stable support line identifies Isaac Sim `5.1.0` / Python `3.11` as the production baseline and still carries Isaac Sim `6.0.0` / Python `3.12` metadata for the isolated experimental branch line.
+> Historical `v2.1.0` release notes described the tagged asset state at that time: Isaac Sim `5.1.0` / Python `3.10` and Isaac Sim `6.0.0` / Python `3.12`.
+> `main` must track the most stable NVIDIA Isaac Sim release that ST has validated for customers. At this time that baseline is Isaac Sim `5.1.0`, not Isaac Sim `6.0.0` Early Developer Release.
 > The source code is shared through an Isaac adapter layer. Release packages must use the `extension.toml` that matches the target Isaac Sim version.
 
 ---
@@ -127,6 +128,36 @@ Run the diagnostic from the target Isaac Sim Python environment before enabling 
 
 The diagnostic must report `Overall: PASS`. If it reports `FAIL`, the output lists the runtime Python version, expected native backend filename, searched directories, discovered binaries, and exact rejection reason.
 It also prints the expected Python ABI for the active runtime and the manifest runtime matrix, for example `Isaac Sim 5.1.0 -> Python 3.11`.
+
+Expected diagnostic output on the stable support / production line:
+
+```text
+Sim2Real IMU Environment Diagnostics
+====================================
+Overall: PASS
+...
+[Sim2Real IMU] Native backend diagnostics:
+  Runtime Python: 3.11 (...)
+  Expected Python ABI for this runtime: 3.11
+  Manifest runtime matrix: Isaac Sim 5.1.0 -> Python 3.11; Isaac Sim 6.0.0 -> Python 3.12
+  Compatible native backend candidates:
+    PASS .../sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so (module=sim2real_native_v0_1)
+```
+
+Expected diagnostic output on the isolated experimental Isaac Sim 6.0.0 branch:
+
+```text
+Sim2Real IMU Environment Diagnostics
+====================================
+Overall: PASS
+...
+[Sim2Real IMU] Native backend diagnostics:
+  Runtime Python: 3.12 (...)
+  Expected Python ABI for this runtime: 3.12
+  Manifest runtime matrix: Isaac Sim 5.1.0 -> Python 3.11; Isaac Sim 6.0.0 -> Python 3.12
+  Compatible native backend candidates:
+    PASS .../sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so (module=sim2real_native_v0_1)
+```
 
 ### Step 4 — Enable the extension
 
@@ -280,12 +311,13 @@ print("Visual prim exists:", prim.IsValid())
 
 ## Tested On
 
-| Component | Version |
-|---|---|
-| Isaac Sim | 5.1.0 stable production baseline; 6.0.0 Early Developer Release on isolated experimental branch |
-| Ubuntu | 22.04 |
-| Python | 3.12; 3.11 |
-| GPU | NVIDIA GeForce RTX 3060 |
+| Line | Isaac Sim | Python | Ubuntu | Validation Scope |
+|---|---|---|---|---|
+| Stable support / production line | 5.1.0 | 3.11 | 22.04 | Current validated production baseline |
+| Experimental branch | 6.0.0 Early Developer Release | 3.12 | 22.04 | Experimental branch validation only |
+| Historical release `v2.1.0` | 5.1.0 | 3.10 | 22.04 | Historical tagged release asset set, superseded |
+
+Validation hardware reference: NVIDIA GeForce RTX 3060.
 
 ---
 
