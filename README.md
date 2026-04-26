@@ -36,6 +36,8 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 | 6.0.0 | 3.12 | Active | Bundled in `sim_binary/` |
 | 5.1.0 | 3.11 | Maintenance / customer support | Bundled in `sim_binary/` |
 
+> This support matrix reflects the assets currently bundled on `main` and described by `sim_binary/manifest.json`.
+> Historical `v2.1.0` release notes referenced Isaac Sim 5.1.0 / Python 3.10. The current branch and upcoming hotfix assets use Isaac Sim 5.1.0 / Python 3.11 instead.
 > The source code is shared through an Isaac adapter layer. Release packages must use the `extension.toml` that matches the target Isaac Sim version.
 
 ---
@@ -121,6 +123,7 @@ Run the diagnostic from the target Isaac Sim Python environment before enabling 
 ```
 
 The diagnostic must report `Overall: PASS`. If it reports `FAIL`, the output lists the runtime Python version, expected native backend filename, searched directories, discovered binaries, and exact rejection reason.
+It also prints the expected Python ABI for the active runtime and the manifest runtime matrix, for example `Isaac Sim 5.1.0 -> Python 3.11`.
 
 ### Step 4 — Enable the extension
 
@@ -240,8 +243,18 @@ Confirm all files are present including `noise/__init__.py`.
 ```bash
 ./python.sh -m sim2real.imu.sensor.diagnostics --verbose
 ```
+- Read the first ABI lines in the report before changing paths:
+  - `Runtime Python: ...`
+  - `Expected Python ABI for this runtime: ...`
+  - `Manifest runtime matrix: Isaac Sim 5.1.0 -> Python 3.11; Isaac Sim 6.0.0 -> Python 3.12`
 - If you set `SIM2REAL_NATIVE_PATH`, verify it points to the folder or file containing a compatible `sim2real_native*.so`
 - Confirm the `.so` matches the Python version bundled with your Isaac Sim runtime
+- A typical ABI mismatch looks like:
+```text
+Python ABI mismatch: runtime 3.11, binary 3.10
+```
+  This means the runtime and native backend were built for different Python ABIs. Use the backend that matches the runtime reported by the diagnostic.
+- If you are comparing against the historical `v2.1.0` release notes, note that `main` now expects the bundled Isaac Sim 5.1.0 backend to be Python 3.11.
 - If the error mentions `GLIBC_x.y not found`, do not manually upgrade system glibc. Use a backend rebuilt on the target OS/version instead.
 
 **Menu shows but cube is not visible in viewport**

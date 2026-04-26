@@ -87,6 +87,11 @@ class NativeBackendDiagnosticsTests(unittest.TestCase):
         self.assertTrue(diagnostics["compatible"])
         self.assertEqual(len(diagnostics["accepted_candidates"]), 1)
         self.assertEqual(diagnostics["accepted_candidates"][0]["module"], "sim2real_native_v0_1")
+        self.assertEqual(diagnostics["expected_python_abi"], "3.11")
+        self.assertEqual(
+            diagnostics["supported_runtimes"],
+            [{"isaac_sim": "5.1.0", "python": "3.11"}],
+        )
 
     def test_missing_abi_reports_available_versions(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -146,6 +151,16 @@ class NativeBackendDiagnosticsTests(unittest.TestCase):
                 diagnostics = native_backend.get_native_backend_diagnostics()
         self.assertTrue(diagnostics["compatible"])
         self.assertIn("max_glibc", diagnostics["accepted_candidates"][0]["warnings"][0])
+
+    def test_formatted_diagnostics_print_expected_abi(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_manifest_fixture(root)
+            with self._patch_runtime(root, "3.11"):
+                diagnostics = native_backend.get_native_backend_diagnostics()
+        formatted = native_backend.format_native_backend_diagnostics(diagnostics, verbose=False)
+        self.assertIn("Expected Python ABI for this runtime: 3.11", formatted)
+        self.assertIn("Isaac Sim 5.1.0 -> Python 3.11", formatted)
 
 
 if __name__ == "__main__":

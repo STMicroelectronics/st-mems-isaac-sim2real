@@ -347,6 +347,30 @@ def _public_search_locations():
     return records
 
 
+def _supported_runtime_matrix(candidates):
+    supported = []
+    seen = set()
+    for candidate in candidates:
+        isaac_version = str(candidate.get("isaac_sim") or "").strip()
+        python_version = str(candidate.get("python") or "").strip()
+        if not isaac_version or not python_version:
+            continue
+        key = (isaac_version, python_version)
+        if key in seen:
+            continue
+        seen.add(key)
+        supported.append(
+            {
+                "isaac_sim": isaac_version,
+                "python": python_version,
+            }
+        )
+    return sorted(
+        supported,
+        key=lambda item: (_version_tuple(item["isaac_sim"]) or (), _version_tuple(item["python"]) or ()),
+    )
+
+
 def _load_native_file(native_file: Path, module_name: str = NATIVE_MODULE_NAME):
     spec = importlib.util.spec_from_file_location(module_name, native_file)
     if spec is None or spec.loader is None:
@@ -389,7 +413,9 @@ def get_native_backend_diagnostics(include_import_check=False, include_smoke_tes
         "runtime": runtime,
         "env": {NATIVE_PATH_ENV_VAR: os.environ.get(NATIVE_PATH_ENV_VAR, "")},
         "extension_root": str(_extension_root()),
+        "expected_python_abi": runtime["python"],
         "expected_filenames": _expected_native_filenames(runtime),
+        "supported_runtimes": _supported_runtime_matrix(candidates),
         "search_locations": _public_search_locations(),
         "manifests": manifests,
         "candidates": candidates,
@@ -455,8 +481,19 @@ def format_native_backend_diagnostics(diagnostics, verbose=False):
         f"  glibc: {runtime.get('glibc') or 'not detected / not Linux'}",
         f"  {NATIVE_PATH_ENV_VAR}: {diagnostics['env'].get(NATIVE_PATH_ENV_VAR) or '<unset>'}",
         f"  Extension root: {diagnostics['extension_root']}",
+        f"  Expected Python ABI for this runtime: {diagnostics['expected_python_abi']}",
         f"  Expected filenames: {', '.join(diagnostics['expected_filenames'])}",
     ]
+
+    supported_runtimes = diagnostics.get("supported_runtimes") or []
+    if supported_runtimes:
+        lines.append(
+            "  Manifest runtime matrix: "
+            + "; ".join(
+                f"Isaac Sim {item['isaac_sim']} -> Python {item['python']}"
+                for item in supported_runtimes
+            )
+        )
 
     if diagnostics.get("accepted_candidates"):
         lines.append("  Compatible native backend candidates:")
