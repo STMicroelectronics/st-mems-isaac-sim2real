@@ -10,17 +10,19 @@ for release validation unless CI explicitly passes `--allow-system-python`.
 Use branch names that encode compatibility-sensitive changes:
 
 ```text
-hotfix/isaac-5.1-python311-diagnostics
-compat/isaac-6.0-python312-ubuntu22-glibc234
+support/isaac-sim-5.1.0-python-3.11-stable
+experimental/isaac-sim-6.0.0-early-developer-release-python-3.12
+hotfix/isaac-sim-5.1.0-python-3.11-native-backend
 release/v2.1.1
 ```
 
 Rules:
 
-- `main` is the production branch and should only receive reviewed, validated release or hotfix commits.
+- `main` is the production branch and should only receive reviewed, validated release or hotfix commits for the current stable NVIDIA Isaac Sim baseline.
 - `release/vX.Y.Z` is used for packaging, changelog date updates, and final release validation.
 - `hotfix/...` is used for urgent customer-facing fixes.
-- `compat/...` is used for Isaac/Python/Ubuntu/glibc/native-backend compatibility work.
+- `support/...` is used for the current stable support line anchored to Isaac Sim `5.1.0` / Python `3.11`.
+- `experimental/...` is used for isolated Isaac Sim `6.0.0` Early Developer Release work that must not redefine `main`.
 - If a change touches Isaac version, Python ABI, Ubuntu, glibc, or native binaries, include that axis in the branch name.
 
 ## Manifest Selection
@@ -47,12 +49,11 @@ sim2real-imu-isaac-6.0.0-v2.1.1.zip
 
 ## Required Release Gates
 
-Run these before creating a tag:
+Run these before creating a stable production tag from `main`:
 
 ```bash
 python packaging/validate_manifest.py
 python packaging/validate_release_zip.py --isaac 5.1.0 path/to/sim2real-imu-isaac-5.1.0-v2.1.1.zip
-python packaging/validate_release_zip.py --isaac 6.0.0 path/to/sim2real-imu-isaac-6.0.0-v2.1.1.zip
 ```
 
 Then run the environment diagnostic inside each supported Isaac Sim runtime and
@@ -62,7 +63,15 @@ capture the output in the release record:
 ./python.sh -m sim2real.imu.sensor.diagnostics --verbose
 ```
 
-A release must not be tagged unless the diagnostic reports `Overall: PASS` in:
+A stable production release from `main` must not be tagged unless the diagnostic reports `Overall: PASS` in:
 
 - Isaac Sim 5.1.0 / Python 3.11 on Ubuntu 22.04.
-- Isaac Sim 6.0.0 / Python 3.12 on Ubuntu 22.04.
+
+For the isolated experimental Isaac Sim 6.0.0 branch, run separate prerelease validation:
+
+```bash
+python packaging/validate_release_zip.py --isaac 6.0.0 path/to/sim2real-imu-isaac-6.0.0-vX.Y.Z.zip
+./python.sh -m sim2real.imu.sensor.diagnostics --verbose
+```
+
+Experimental Isaac Sim 6.0.0 work must remain off `main` until NVIDIA promotes 6.0.0 from Early Developer Release to a normal stable/GA release and ST revalidates the extension end-to-end.

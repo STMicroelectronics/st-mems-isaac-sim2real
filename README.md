@@ -22,10 +22,11 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 ## Requirements
 
 - **Ubuntu 22.04** (tested)
-- **Isaac Sim Full 6.0.0** with **Python 3.12** or **Isaac Sim Full 5.1.0** with **Python 3.11** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
+- **Production baseline:** **Isaac Sim Full 5.1.0** with **Python 3.11** — [Installation Guide](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html)
+- **Experimental branch only:** **Isaac Sim 6.0.0 Early Developer Release** with **Python 3.12**
 - The compiled **C++ sensor-realism engine**:
-  - Bundled for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
   - Bundled for Isaac Sim 5.1.0 / Python 3.11: `sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so`
+  - Experimental branch asset for Isaac Sim 6.0.0 / Python 3.12: `sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so`
   - Native binaries are platform-specific and must match the Python runtime and target Linux distribution.
   - Ubuntu 22.04 builds must not require a glibc version newer than the OS-provided glibc 2.35.
 
@@ -33,11 +34,12 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 
 | Isaac Sim | Python | Support Level | Native Backend |
 |---|---:|---|---|
-| 6.0.0 | 3.12 | Active | Bundled in `sim_binary/` |
-| 5.1.0 | 3.11 | Maintenance / customer support | Bundled in `sim_binary/` |
+| 5.1.0 | 3.11 | Stable production baseline on `main` | Bundled in `sim_binary/` |
+| 6.0.0 Early Developer Release | 3.12 | Experimental, isolated branch only | Use `experimental/isaac-sim-6.0.0-early-developer-release-python-3.12` |
 
 > This support matrix reflects the assets currently bundled on `main` and described by `sim_binary/manifest.json`.
 > Historical `v2.1.0` release notes referenced Isaac Sim 5.1.0 / Python 3.10. The current branch and upcoming hotfix assets use Isaac Sim 5.1.0 / Python 3.11 instead.
+> `main` must track the most stable NVIDIA Isaac Sim release that ST has validated for customers. At this time that baseline is Isaac Sim 5.1.0, not Isaac Sim 6.0.0 Early Developer Release.
 > The source code is shared through an Isaac adapter layer. Release packages must use the `extension.toml` that matches the target Isaac Sim version.
 
 ---
@@ -92,11 +94,12 @@ cd st-mems-isaac-sim2real
 Select the extension manifest that matches your Isaac Sim version:
 
 ```bash
-# Isaac Sim 6.0.0
-cp packaging/isaac-6.0.0/extension.toml config/extension.toml
-
 # Isaac Sim 5.1.0
-# cp packaging/isaac-5.1.0/extension.toml config/extension.toml
+cp packaging/isaac-5.1.0/extension.toml config/extension.toml
+
+# Isaac Sim 6.0.0 Early Developer Release
+# Use only from branch: experimental/isaac-sim-6.0.0-early-developer-release-python-3.12
+# cp packaging/isaac-6.0.0/extension.toml config/extension.toml
 ```
 
 Copy the repo contents into your Isaac Sim extensions directory:
@@ -279,7 +282,7 @@ print("Visual prim exists:", prim.IsValid())
 
 | Component | Version |
 |---|---|
-| Isaac Sim | 6.0.0 active; 5.1.0 maintenance |
+| Isaac Sim | 5.1.0 stable production baseline; 6.0.0 Early Developer Release on isolated experimental branch |
 | Ubuntu | 22.04 |
 | Python | 3.12; 3.11 |
 | GPU | NVIDIA GeForce RTX 3060 |
@@ -292,14 +295,22 @@ print("Visual prim exists:", prim.IsValid())
 - Do not run release validation from system Python unless explicitly using `--allow-system-python` in CI.
 - Use compatibility-specific branches for changes that touch Isaac, Python, Ubuntu, glibc, or native backend behavior:
 ```text
-hotfix/isaac-5.1-python311-diagnostics
-compat/isaac-6.0-python312-ubuntu22-glibc234
+support/isaac-sim-5.1.0-python-3.11-stable
+experimental/isaac-sim-6.0.0-early-developer-release-python-3.12
+hotfix/isaac-sim-5.1.0-python-3.11-native-backend
 release/v2.1.1
 ```
 - Branch names must encode the compatibility axis being changed when relevant: Isaac version, Python ABI, Ubuntu version, glibc floor, or native backend module name.
+- `support/...` means a long-lived customer support line anchored to the current stable production baseline.
+- `experimental/...` means isolated forward-looking work that must not redefine `main` until the upstream platform becomes stable and is fully revalidated.
 - Before tagging a release, run:
 ```bash
 python packaging/validate_manifest.py
 python packaging/validate_release_zip.py --isaac 5.1.0 path/to/sim2real-imu-isaac-5.1.0-vX.Y.Z.zip
+```
+
+For isolated experimental Isaac Sim 6.0.0 work, run the 6.0.0 ZIP validator only from the experimental branch:
+
+```bash
 python packaging/validate_release_zip.py --isaac 6.0.0 path/to/sim2real-imu-isaac-6.0.0-vX.Y.Z.zip
 ```

@@ -9,6 +9,7 @@ All notable changes to this project are documented in this file.
 - Replaced deprecated `max_glibc` manifest metadata with `min_glibc`.
 - Documented compatibility-focused branch naming and isolated Python environment requirements.
 - Clarified that the current `main` support matrix differs from the historical `v2.1.0` Python 3.10 note for Isaac Sim 5.1.0.
+- Repositioned `main` as the Isaac Sim 5.1.0 stable production baseline and isolated Isaac Sim 6.0.0 Early Developer Release work into a dedicated experimental branch policy.
 
 ## [v2.1.0] - 2026-04-21
 - Added Isaac Sim adapter layer so Isaac API changes stay isolated from the Sim2Real runtime.
