@@ -14,6 +14,7 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 
 - ✅ Native Isaac Sim menu integration — no scripting required to place sensors
 - ✅ Auto-attaches to whichever prim is selected in the Stage panel
+- ✅ Auto-resolves the underlying clean Isaac IMU under the selected link, or auto-creates `Imu_Sensor` if none exists
 - ✅ Visible dark navy cube marker in the viewport
 - ✅ Physics-step driven runtime ticks each IMU at its configured ODR, independent of render rate
 - ✅ Realistic IMU response model with sensor noise, bias drift, and quantization effects
@@ -197,7 +198,8 @@ Overall: PASS
 
 ![Properties Panel](imgs/properties_panel.png)
 
-6. Press **Play** — the Sim2Real engine ticks automatically at the sensor's configured ODR
+6. Press **Play** — the Sim2Real engine resolves the clean Isaac IMU from `sim2real:truthImuPrimPath`, from a child IMU-like prim under the selected link, or auto-creates `/Imu_Sensor` as a fallback
+7. The Sim2Real engine then ticks automatically at the sensor's configured ODR
 
 ---
 
@@ -290,6 +292,18 @@ Python ABI mismatch: runtime 3.11, binary 3.10
   This means the runtime and native backend were built for different Python ABIs. Use the backend that matches the runtime reported by the diagnostic.
 - If you are comparing against the historical `v2.1.0` release notes, note that `main` now expects the bundled Isaac Sim 5.1.0 backend to be Python 3.11.
 - If the error mentions `GLIBC_x.y not found`, do not manually upgrade system glibc. Use a backend rebuilt on the target OS/version instead.
+
+**Sim2Real sensor spawns, but no realistic IMU data appears**
+- Inspect the spawned sensor prim custom data in **Properties**:
+  - `sim2real:attachPrimPath`
+  - `sim2real:truthImuPrimPath`
+- The runtime now resolves the clean Isaac IMU in this order:
+  1. explicit `sim2real:truthImuPrimPath`
+  2. default child `<attachPrimPath>/Imu_Sensor`
+  3. first IMU-like descendant under the attached link
+  4. auto-create `<attachPrimPath>/Imu_Sensor`
+- If your stage uses a specific native IMU prim path, set `sim2real:truthImuPrimPath` directly on the Sim2Real sensor prim.
+- If auto-creation fails, check the console for `Could not initialize native Isaac sensor` and `Hint: set sim2real:truthImuPrimPath explicitly`.
 
 **Menu shows but cube is not visible in viewport**
 - Toggle the extension off and on
