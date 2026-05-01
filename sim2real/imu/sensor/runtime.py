@@ -40,6 +40,7 @@ class ImuSensorRuntime:
     SENSOR_METADATA_PREFIX = "sim2real:"
     SENSOR_ENABLED_KEY = f"{SENSOR_METADATA_PREFIX}enabled"
     SENSOR_MODEL_KEY = f"{SENSOR_METADATA_PREFIX}model"
+    TRUTH_SENSOR_PATH_KEY = f"{SENSOR_METADATA_PREFIX}truthImuPrimPath"
     LAST_LIN_ACC_KEY = f"{SENSOR_METADATA_PREFIX}last_lin_acc"
     LAST_ANG_VEL_KEY = f"{SENSOR_METADATA_PREFIX}last_ang_vel"
 
@@ -111,8 +112,13 @@ class ImuSensorRuntime:
             self._backend.register(sensor_prim_path, normalized_config, seed=seed)
 
         attach_prim_path = normalized_config.get("attachPrimPath", "")
+        truth_sensor_prim_path = normalized_config.get("truthImuPrimPath", "")
         if attach_prim_path:
-            self._initialize_truth_sensor(sensor_prim_path, attach_prim_path)
+            self._initialize_truth_sensor(
+                sensor_prim_path,
+                attach_prim_path,
+                configured_truth_sensor_path=truth_sensor_prim_path,
+            )
         else:
             print(
                 f"[Sim2Real Runtime] WARNING: No attachPrimPath for {sensor_prim_path}. "
@@ -145,36 +151,138 @@ class ImuSensorRuntime:
     # Internal
     # ------------------------------------------------------------------
 
-    def _initialize_truth_sensor(self, sensor_prim_path: str, attach_prim_path: str):
+    def _initialize_truth_sensor(
+        self,
+        sensor_prim_path: str,
+        attach_prim_path: str,
+        configured_truth_sensor_path: str = "",
+    ):
         """
         Create and initialize a native Isaac IMUSensor for the given attach link.
-        The native sensor is assumed to live at <attach_prim_path>/Imu_Sensor.
-        This is called once at registration, not every physics step.
+        Resolution order:
+          1. Explicit sim2real:truthImuPrimPath if present and valid
+          2. Default child <attach_prim_path>/Imu_Sensor
+          3. First IMU-like descendant under attachPrimPath
+          4. Auto-create <attach_prim_path>/Imu_Sensor as a final fallback
         """
-        try:
-            truth_sensor_path = f"{attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}"
-            stage = omni.usd.get_context().get_stage()
-            prim = stage.GetPrimAtPath(truth_sensor_path)
-            if not prim.IsValid():
-                print(
-                    f"[Sim2Real Runtime] WARNING: Native Isaac IMU prim not found at "
-                    f"{truth_sensor_path}. Check the prim name in your stage."
-                )
-                print("[Sim2Real Runtime] Hint: Run this in Script Editor to locate IMU prims:")
-                print("    for p in stage.Traverse():")
-                print("        if 'imu' in str(p.GetPath()).lower(): print(p.GetPath())")
-                return
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            print(
+                f"[Sim2Real Runtime] WARNING: No stage while initializing truth IMU for "
+                f"{sensor_prim_path}."
+            )
+            return
 
-            sensor = self._get_isaac_adapter().create_imu_sensor(prim_path=truth_sensor_path)
-            sensor.initialize()
+        try:
+            truth_sensor_path, resolution_source = self._resolve_truth_sensor_path(
+                stage,
+                attach_prim_path,
+                configured_truth_sensor_path=configured_truth_sensor_path,
+            )
+            if truth_sensor_path is None:
+                truth_sensor_path = f"{attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}"
+                sensor = self._create_truth_sensor(truth_sensor_path)
+                resolution_source = "auto-created"
+                print(
+                    f"[Sim2Real Runtime] Auto-created native Isaac IMU at "
+                    f"{truth_sensor_path} for {sensor_prim_path}."
+                )
+            else:
+                sensor = self._get_isaac_adapter().create_imu_sensor(prim_path=truth_sensor_path)
+                sensor.initialize()
+
             self._truth_sensor_cache[sensor_prim_path] = sensor
-            print(f"[Sim2Real Runtime] Cached native Isaac IMUSensor at {truth_sensor_path}")
+            self._persist_truth_sensor_path(sensor_prim_path, truth_sensor_path)
+            print(
+                f"[Sim2Real Runtime] Bound native Isaac IMU for {sensor_prim_path}: "
+                f"{truth_sensor_path} ({resolution_source})"
+            )
 
         except Exception as error:
             print(
                 f"[Sim2Real Runtime] ERROR: Could not initialize native Isaac sensor "
                 f"for {sensor_prim_path}: {error}"
             )
+            print(
+                "[Sim2Real Runtime] Hint: set sim2real:truthImuPrimPath explicitly, "
+                f"or create a child IMU under {attach_prim_path}, or allow auto-creation "
+                f"at {attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}."
+            )
+
+    def _resolve_truth_sensor_path(
+        self,
+        stage,
+        attach_prim_path: str,
+        configured_truth_sensor_path: str = "",
+    ) -> tuple[str | None, str]:
+        if configured_truth_sensor_path:
+            prim = stage.GetPrimAtPath(configured_truth_sensor_path)
+            if prim.IsValid():
+                return configured_truth_sensor_path, "configured truthImuPrimPath"
+            print(
+                f"[Sim2Real Runtime] WARNING: Configured truthImuPrimPath "
+                f"{configured_truth_sensor_path} was not found. Falling back to auto-discovery."
+            )
+
+        default_truth_sensor_path = f"{attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}"
+        prim = stage.GetPrimAtPath(default_truth_sensor_path)
+        if prim.IsValid():
+            return default_truth_sensor_path, "default child path"
+
+        discovered_path = self._discover_truth_sensor_path(stage, attach_prim_path)
+        if discovered_path:
+            return discovered_path, "discovered IMU-like descendant"
+
+        print(
+            f"[Sim2Real Runtime] WARNING: No native Isaac IMU prim found under "
+            f"{attach_prim_path}. Attempting auto-creation at {default_truth_sensor_path}."
+        )
+        print("[Sim2Real Runtime] Hint: Run this in Script Editor to locate IMU prims:")
+        print("    for p in stage.Traverse():")
+        print("        if 'imu' in str(p.GetPath()).lower(): print(p.GetPath())")
+        return None, "auto-create fallback"
+
+    def _discover_truth_sensor_path(self, stage, attach_prim_path: str) -> str | None:
+        attach_prefix = f"{attach_prim_path.rstrip('/')}/"
+        candidates = []
+        for prim in stage.Traverse():
+            prim_path = str(prim.GetPath())
+            if not prim_path.startswith(attach_prefix):
+                continue
+            leaf_name = prim_path.rsplit("/", 1)[-1].lower()
+            if "imu" not in leaf_name:
+                continue
+            exact_default = leaf_name == self.TRUTH_SENSOR_PRIM_NAME.lower()
+            generic_name = leaf_name in {"imu", "imu_sensor"}
+            score = (
+                0 if exact_default else
+                1 if generic_name else
+                2
+            )
+            depth = prim_path.count("/")
+            candidates.append((score, depth, prim_path))
+
+        if not candidates:
+            return None
+
+        candidates.sort()
+        return candidates[0][2]
+
+    def _create_truth_sensor(self, truth_sensor_path: str):
+        sensor = self._get_isaac_adapter().create_imu_sensor(
+            prim_path=truth_sensor_path,
+            name=self.TRUTH_SENSOR_PRIM_NAME,
+        )
+        sensor.initialize()
+        return sensor
+
+    def _persist_truth_sensor_path(self, sensor_prim_path: str, truth_sensor_path: str):
+        stage = omni.usd.get_context().get_stage()
+        if not stage:
+            return
+        prim = stage.GetPrimAtPath(sensor_prim_path)
+        if prim.IsValid():
+            prim.SetCustomDataByKey(self.TRUTH_SENSOR_PATH_KEY, truth_sensor_path)
 
     def _on_physics_step(self, dt: float):
         if not self._timeline.is_playing():

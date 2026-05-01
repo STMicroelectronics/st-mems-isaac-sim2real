@@ -17,7 +17,7 @@
 try:
     from .extension import Sim2RealIMUSensorExtension, StImuSensorExtension
 except ModuleNotFoundError as error:
-    if error.name != "omni":
+    if not str(error.name or "").startswith("omni"):
         raise
     Sim2RealIMUSensorExtension = None
     StImuSensorExtension = None
