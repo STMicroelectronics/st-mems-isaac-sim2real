@@ -246,6 +246,12 @@ Included scripts let you validate the Sim2Real IMU response against clean Isaac 
 
 ### Run the verification script
 
+If you are using a minimal Isaac Sim pip/conda environment, install the verification dependencies first:
+
+```bash
+pip install -r requirements.txt
+```
+
 1. Load a stage with a Franka robot
 2. Select `panda_hand` in the Stage panel and place an ASM330LHH sensor via the menu
 3. Open **Window → Script Editor**
@@ -292,6 +298,13 @@ Python ABI mismatch: runtime 3.11, binary 3.10
   This means the runtime and native backend were built for different Python ABIs. Use the backend that matches the runtime reported by the diagnostic.
 - If you are comparing against the historical `v2.1.0` release notes, note that `main` now expects the bundled Isaac Sim 5.1.0 backend to be Python 3.11.
 - If the error mentions `GLIBC_x.y not found`, do not manually upgrade system glibc. Use a backend rebuilt on the target OS/version instead.
+
+**`plot_verification.py` fails with `ModuleNotFoundError: No module named 'pandas'`**
+- Install the plotting dependencies from the repo root:
+```bash
+pip install -r requirements.txt
+```
+- `requirements.txt` covers only the verification and plotting scripts. Isaac Sim's `omni.*` packages still come from Isaac itself.
 
 **Sim2Real sensor spawns, but no realistic IMU data appears**
 - Inspect the spawned sensor prim custom data in **Properties**:
