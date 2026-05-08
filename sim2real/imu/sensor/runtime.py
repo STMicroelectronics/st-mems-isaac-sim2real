@@ -337,9 +337,21 @@ class ImuSensorRuntime:
             lin_acc = realistic_kinematics.get("lin_acc")
             ang_vel = realistic_kinematics.get("ang_vel")
             if lin_acc is not None:
-                prim.SetCustomDataByKey(self.LAST_LIN_ACC_KEY, list(lin_acc))
+                lin_acc = self._coerce_numeric_sequence(
+                    lin_acc,
+                    sensor_prim_path=sensor_prim_path,
+                    label="lin_acc",
+                )
+                if lin_acc is not None:
+                    prim.SetCustomDataByKey(self.LAST_LIN_ACC_KEY, lin_acc)
             if ang_vel is not None:
-                prim.SetCustomDataByKey(self.LAST_ANG_VEL_KEY, list(ang_vel))
+                ang_vel = self._coerce_numeric_sequence(
+                    ang_vel,
+                    sensor_prim_path=sensor_prim_path,
+                    label="ang_vel",
+                )
+                if ang_vel is not None:
+                    prim.SetCustomDataByKey(self.LAST_ANG_VEL_KEY, ang_vel)
 
         self._last_tick_sim_time_s[sensor_prim_path] = sim_time
 
@@ -429,6 +441,22 @@ class ImuSensorRuntime:
             return self.DEFAULT_ODR_HZ
 
         return odr_hz
+
+    def _coerce_numeric_sequence(
+        self,
+        values,
+        *,
+        sensor_prim_path: str,
+        label: str,
+    ) -> list[float] | None:
+        try:
+            return [float(value) for value in values]
+        except (TypeError, ValueError) as error:
+            print(
+                f"[Sim2Real Runtime] WARNING: Could not persist {label} for "
+                f"{sensor_prim_path}: {error}"
+            )
+            return None
 
 
 # Backward-compatible class name for existing imports.
