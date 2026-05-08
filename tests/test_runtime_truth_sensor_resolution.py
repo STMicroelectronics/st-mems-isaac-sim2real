@@ -14,6 +14,7 @@
 # ******************************************************************************
 
 import importlib
+from decimal import Decimal
 import sys
 import types
 import unittest
@@ -57,6 +58,12 @@ class _FakePrim:
         return dict(self._custom_data)
 
     def SetCustomDataByKey(self, key, value):
+        if isinstance(value, list):
+            invalid_items = [item for item in value if type(item) not in (float, int, str, bool)]
+            if invalid_items:
+                raise ValueError(
+                    f"Invalid value type for dictionary key-path '{key}': '{value}'."
+                )
         self._custom_data[key] = value
 
     def GetCustomDataByKey(self, key):
@@ -194,6 +201,39 @@ class RuntimeTruthSensorResolutionTests(unittest.TestCase):
         self.assertEqual(
             self.adapter.created_paths[-1],
             (truth_sensor_path, self.runtime.TRUTH_SENSOR_PRIM_NAME),
+        )
+
+    def test_tick_sensor_coerces_numeric_scalars_before_persisting_custom_data(self):
+        sensor_prim_path = "/World/robot/link/ASM330LHH"
+        self.runtime._backend = types.SimpleNamespace(
+            step_sensor=lambda *_args, **_kwargs: {
+                "lin_acc": [
+                    Decimal("-8.724470849609375"),
+                    Decimal("0.1292868896484375"),
+                    Decimal("-4.762067102050781"),
+                ],
+                "ang_vel": [
+                    Decimal("0.1"),
+                    Decimal("0.2"),
+                    Decimal("0.3"),
+                ],
+            }
+        )
+        self.runtime._read_truth_kinematics = lambda _sensor_prim_path: {
+            "lin_acc": [0.0, 0.0, 0.0],
+            "ang_vel": [0.0, 0.0, 0.0],
+        }
+
+        self.runtime._tick_sensor(self.stage, sensor_prim_path, 1.25)
+
+        prim = self.stage.GetPrimAtPath(sensor_prim_path)
+        self.assertEqual(
+            prim.GetCustomDataByKey(self.runtime.LAST_LIN_ACC_KEY),
+            [-8.724470849609375, 0.1292868896484375, -4.762067102050781],
+        )
+        self.assertEqual(
+            prim.GetCustomDataByKey(self.runtime.LAST_ANG_VEL_KEY),
+            [0.1, 0.2, 0.3],
         )
 
 

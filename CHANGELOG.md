@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 - Added release-grade native backend diagnostics with Python ABI, glibc, search path, manifest, and import/smoke-test reporting.
 - Added release validation scripts for native manifest and Isaac-versioned ZIP packages.
 - Removed the hard dependency on a pre-named `Imu_Sensor` child by resolving `sim2real:truthImuPrimPath`, discovering IMU-like descendants, and auto-creating a default Isaac IMU fallback when needed.
+- Normalized persisted IMU custom-data vectors to plain Python floats so USD metadata writes do not fail on `numpy`-style scalar types.
 - Replaced deprecated `max_glibc` manifest metadata with `min_glibc`.
 - Documented compatibility-focused branch naming and isolated Python environment requirements.
 - Clarified that the current `main` support matrix differs from the historical `v2.1.0` Python 3.10 note for Isaac Sim 5.1.0.
