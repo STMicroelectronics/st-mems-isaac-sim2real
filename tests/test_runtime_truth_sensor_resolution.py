@@ -14,7 +14,6 @@
 # ******************************************************************************
 
 import importlib
-from decimal import Decimal
 import sys
 import types
 import unittest
@@ -94,17 +93,33 @@ class _FakeSensor:
     def initialize(self):
         self.initialized = True
 
+    def get_current_frame(self, read_gravity=True):
+        _ = read_gravity
+        return {
+            "lin_acc": [1.0, 2.0, 3.0],
+            "ang_vel": [0.1, 0.2, 0.3],
+        }
+
 
 class _FakeAdapter:
     def __init__(self, stage):
         self._stage = stage
         self.created_paths = []
+        self.failures_remaining = 0
 
     def create_imu_sensor(self, prim_path: str, name: str | None = None):
         self.created_paths.append((prim_path, name))
+        if self.failures_remaining > 0:
+            self.failures_remaining -= 1
+            raise RuntimeError(
+                "cannot access local variable 'current_physics_prim' where it is not associated with a value"
+            )
         if not self._stage.GetPrimAtPath(prim_path).IsValid():
             self._stage.add_prim(prim_path)
         return _FakeSensor(prim_path)
+
+    def normalize_imu_frame(self, raw):
+        return raw
 
 
 class _FakePhysxInterface:
@@ -113,11 +128,15 @@ class _FakePhysxInterface:
 
 
 class _FakeTimeline:
+    def __init__(self):
+        self.playing = False
+        self.current_time = 0.0
+
     def is_playing(self):
-        return False
+        return self.playing
 
     def get_current_time(self):
-        return 0.0
+        return self.current_time
 
 
 class _FakeUsdContext:
@@ -161,10 +180,12 @@ class RuntimeTruthSensorResolutionTests(unittest.TestCase):
         )
         self.stage = _CURRENT_STAGE
         self.adapter = _FakeAdapter(self.stage)
+        self.timeline = _FakeTimeline()
         self.runtime = runtime_module.ImuSensorRuntime(
             noise_backend=types.SimpleNamespace(),
             isaac_adapter=self.adapter,
         )
+        self.runtime._timeline = self.timeline
 
     def test_resolve_uses_configured_truth_path_when_valid(self):
         self.stage.add_prim("/World/robot/link/custom_truth_imu")
@@ -203,38 +224,60 @@ class RuntimeTruthSensorResolutionTests(unittest.TestCase):
             (truth_sensor_path, self.runtime.TRUTH_SENSOR_PRIM_NAME),
         )
 
-    def test_tick_sensor_coerces_numeric_scalars_before_persisting_custom_data(self):
+    def test_runtime_retries_truth_sensor_binding_after_initial_physics_scene_failure(self):
         sensor_prim_path = "/World/robot/link/ASM330LHH"
+        step_calls = []
         self.runtime._backend = types.SimpleNamespace(
-            step_sensor=lambda *_args, **_kwargs: {
-                "lin_acc": [
-                    Decimal("-8.724470849609375"),
-                    Decimal("0.1292868896484375"),
-                    Decimal("-4.762067102050781"),
-                ],
-                "ang_vel": [
-                    Decimal("0.1"),
-                    Decimal("0.2"),
-                    Decimal("0.3"),
-                ],
-            }
+            register_sensor=lambda *_args, **_kwargs: None,
+            step_sensor=lambda *_args, **_kwargs: step_calls.append("step") or {
+                "lin_acc": [4.0, 5.0, 6.0],
+                "ang_vel": [0.4, 0.5, 0.6],
+            },
         )
-        self.runtime._read_truth_kinematics = lambda _sensor_prim_path: {
-            "lin_acc": [0.0, 0.0, 0.0],
-            "ang_vel": [0.0, 0.0, 0.0],
-        }
+        self.adapter.failures_remaining = 1
+        self.runtime.register_sensor(
+            sensor_prim_path,
+            {"attachPrimPath": "/World/robot/link", "odr_hz": 100.0},
+        )
 
-        self.runtime._tick_sensor(self.stage, sensor_prim_path, 1.25)
+        self.assertNotIn(sensor_prim_path, self.runtime._truth_sensor_cache)
+        self.assertIn(sensor_prim_path, self.runtime._truth_sensor_pending)
 
+        self.timeline.playing = True
+        self.timeline.current_time = 1.0
+        self.runtime._on_physics_step(0.01)
+
+        self.assertIn(sensor_prim_path, self.runtime._truth_sensor_cache)
+        self.assertNotIn(sensor_prim_path, self.runtime._truth_sensor_pending)
+        self.assertEqual(step_calls, ["step"])
+        self.assertEqual(self.runtime._last_tick_sim_time_s[sensor_prim_path], 1.0)
+
+    def test_runtime_skips_sensor_ticks_until_truth_imu_is_available(self):
+        sensor_prim_path = "/World/robot/link/ASM330LHH"
+        step_calls = []
+        self.runtime._backend = types.SimpleNamespace(
+            register_sensor=lambda *_args, **_kwargs: None,
+            step_sensor=lambda *_args, **_kwargs: step_calls.append("step") or {
+                "lin_acc": [4.0, 5.0, 6.0],
+                "ang_vel": [0.4, 0.5, 0.6],
+            },
+        )
+        self.adapter.failures_remaining = 99
+        self.runtime.register_sensor(
+            sensor_prim_path,
+            {"attachPrimPath": "/World/robot/link", "odr_hz": 100.0},
+        )
+
+        self.timeline.playing = True
+        self.timeline.current_time = 2.0
+        self.runtime._on_physics_step(0.02)
+
+        self.assertNotIn(sensor_prim_path, self.runtime._truth_sensor_cache)
+        self.assertEqual(step_calls, [])
+        self.assertNotIn(sensor_prim_path, self.runtime._last_tick_sim_time_s)
         prim = self.stage.GetPrimAtPath(sensor_prim_path)
-        self.assertEqual(
-            prim.GetCustomDataByKey(self.runtime.LAST_LIN_ACC_KEY),
-            [-8.724470849609375, 0.1292868896484375, -4.762067102050781],
-        )
-        self.assertEqual(
-            prim.GetCustomDataByKey(self.runtime.LAST_ANG_VEL_KEY),
-            [0.1, 0.2, 0.3],
-        )
+        self.assertIsNone(prim.GetCustomDataByKey(self.runtime.LAST_LIN_ACC_KEY))
+        self.assertIsNone(prim.GetCustomDataByKey(self.runtime.LAST_ANG_VEL_KEY))
 
 
 if __name__ == "__main__":
