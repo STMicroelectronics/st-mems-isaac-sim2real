@@ -64,9 +64,56 @@ def _check_isaac_adapter():
         }
 
 
+def _check_physics_scene():
+    try:
+        import omni.usd
+        from pxr import PhysxSchema, UsdPhysics
+    except Exception as error:  # noqa: BLE001 - diagnostics must capture Isaac import failures.
+        return {
+            "available": False,
+            "error": str(error),
+        }
+
+    stage = omni.usd.get_context().get_stage()
+    if stage is None:
+        return {
+            "available": False,
+            "warning": "No stage is currently open.",
+        }
+
+    physics_scene_prim = None
+    for prim in stage.Traverse():
+        if prim.IsA(UsdPhysics.Scene):
+            physics_scene_prim = prim
+            break
+
+    if physics_scene_prim is None:
+        return {
+            "available": False,
+            "warning": "No PhysicsScene found. Isaac will use the default 60 steps/sec until a scene is created.",
+            "recommended_steps_per_second": 208.0,
+        }
+
+    physx_api = PhysxSchema.PhysxSceneAPI.Apply(physics_scene_prim)
+    steps_per_second = physx_api.GetTimeStepsPerSecondAttr().Get()
+    if steps_per_second in (None, 0):
+        steps_per_second = 60.0
+
+    recommended_steps_per_second = 208.0
+    return {
+        "available": True,
+        "path": str(physics_scene_prim.GetPath()),
+        "steps_per_second": float(steps_per_second),
+        "dt_seconds": 1.0 / float(steps_per_second),
+        "recommended_steps_per_second": recommended_steps_per_second,
+        "meets_recommendation": float(steps_per_second) + 1e-6 >= recommended_steps_per_second,
+    }
+
+
 def run_diagnostics():
     native = get_native_backend_diagnostics(include_import_check=True, include_smoke_test=True)
     adapter = _check_isaac_adapter()
+    physics_scene = _check_physics_scene()
     environment = _python_environment_record()
     passed = bool(
         native.get("import_check", {}).get("available")
@@ -79,6 +126,7 @@ def run_diagnostics():
         "environment": environment,
         "native_backend": native,
         "isaac_adapter": adapter,
+        "physics_scene": physics_scene,
     }
 
 
@@ -126,6 +174,33 @@ def format_diagnostics(report, verbose=False):
                 "[FAIL] Isaac IMU adapter",
                 f"  Error: {adapter.get('error')}",
                 "  Recommendation: run this command from inside the target Isaac Sim Python environment.",
+            ]
+        )
+
+    lines.append("")
+    physics_scene = report["physics_scene"]
+    if physics_scene.get("available"):
+        status = "PASS" if physics_scene.get("meets_recommendation") else "WARN"
+        lines.extend(
+            [
+                f"[{status}] Physics step configuration",
+                f"  PhysicsScene: {physics_scene.get('path')}",
+                f"  Steps/sec: {physics_scene.get('steps_per_second')}",
+                f"  dt: {physics_scene.get('dt_seconds'):.6f}s",
+                "  Repo baseline recommendation: 208 Hz",
+            ]
+        )
+        if not physics_scene.get("meets_recommendation"):
+            lines.append(
+                "  Recommendation: increase Physics Scene steps/sec to 208 for the current public Sim2Real baseline."
+            )
+    else:
+        lines.extend(
+            [
+                "[WARN] Physics step configuration",
+                f"  Status: {physics_scene.get('warning') or physics_scene.get('error')}",
+                "  Repo baseline recommendation: 208 Hz",
+                "  Recommendation: create or configure a PhysicsScene before validation.",
             ]
         )
     return "\n".join(lines)

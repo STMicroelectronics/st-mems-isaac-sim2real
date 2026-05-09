@@ -17,6 +17,7 @@ import importlib
 import sys
 import types
 import unittest
+from unittest import mock
 
 
 _CURRENT_STAGE = None
@@ -278,6 +279,27 @@ class RuntimeTruthSensorResolutionTests(unittest.TestCase):
         prim = self.stage.GetPrimAtPath(sensor_prim_path)
         self.assertIsNone(prim.GetCustomDataByKey(self.runtime.LAST_LIN_ACC_KEY))
         self.assertIsNone(prim.GetCustomDataByKey(self.runtime.LAST_ANG_VEL_KEY))
+
+    def test_runtime_warns_once_when_physics_rate_is_below_repo_baseline(self):
+        self.runtime._sensor_registry["/World/robot/link/ASM330LHH"] = {"odr_hz": 104.0}
+        with mock.patch("builtins.print") as print_mock:
+            self.runtime._maybe_warn_on_physics_rate(1.0 / 60.0)
+            self.runtime._maybe_warn_on_physics_rate(1.0 / 60.0)
+
+        warning_calls = [
+            call for call in print_mock.call_args_list if "Current physics step is approximately" in str(call)
+        ]
+        self.assertEqual(len(warning_calls), 1)
+
+    def test_runtime_does_not_warn_when_physics_rate_meets_repo_baseline(self):
+        self.runtime._sensor_registry["/World/robot/link/ASM330LHH"] = {"odr_hz": 104.0}
+        with mock.patch("builtins.print") as print_mock:
+            self.runtime._maybe_warn_on_physics_rate(1.0 / 208.0)
+
+        warning_calls = [
+            call for call in print_mock.call_args_list if "Current physics step is approximately" in str(call)
+        ]
+        self.assertEqual(warning_calls, [])
 
 
 if __name__ == "__main__":

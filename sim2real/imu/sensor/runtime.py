@@ -36,6 +36,7 @@ class ImuSensorRuntime:
 
     DEFAULT_ODR_HZ = 100.0
     STAGE_DISCOVERY_INTERVAL_S = 1.0
+    RECOMMENDED_PHYSICS_STEPS_PER_SECOND = 208.0
     TRUTH_SENSOR_PRIM_NAME = "Imu_Sensor"
     SENSOR_METADATA_PREFIX = "sim2real:"
     SENSOR_ENABLED_KEY = f"{SENSOR_METADATA_PREFIX}enabled"
@@ -75,6 +76,9 @@ class ImuSensorRuntime:
         # prim_path -> last initialization error string to suppress repeated log spam.
         self._truth_sensor_init_errors = {}
 
+        # Warn once if the stage physics rate is below the current repo baseline.
+        self._physics_rate_warning_emitted = False
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -94,6 +98,7 @@ class ImuSensorRuntime:
         self._truth_sensor_cache.clear()
         self._truth_sensor_pending.clear()
         self._truth_sensor_init_errors.clear()
+        self._physics_rate_warning_emitted = False
         print("[Sim2Real Runtime] Stopped.")
 
     def register_sensor(self, sensor_prim_path: str, sensor_config: dict, seed: int = 123):
@@ -358,6 +363,8 @@ class ImuSensorRuntime:
             self._time_since_stage_scan_s = 0.0
             self._discover_sensors_from_stage(stage)
 
+        self._maybe_warn_on_physics_rate(dt)
+
         sim_time = float(self._timeline.get_current_time())
 
         for sensor_prim_path, sensor_config in list(self._sensor_registry.items()):
@@ -490,6 +497,24 @@ class ImuSensorRuntime:
             return self.DEFAULT_ODR_HZ
 
         return odr_hz
+
+    def _maybe_warn_on_physics_rate(self, dt: float):
+        if self._physics_rate_warning_emitted:
+            return
+        if dt <= 0.0 or not self._sensor_registry:
+            return
+
+        physics_steps_per_second = 1.0 / float(dt)
+        if physics_steps_per_second + 1e-6 >= self.RECOMMENDED_PHYSICS_STEPS_PER_SECOND:
+            return
+
+        print(
+            "[Sim2Real Runtime] WARNING: Current physics step is approximately "
+            f"{physics_steps_per_second:.3f} Hz based on dt={dt:.6f}s. "
+            f"This repo currently recommends {self.RECOMMENDED_PHYSICS_STEPS_PER_SECOND:.0f} Hz "
+            "physics for the public Sim2Real IMU baseline to reduce timing quantization."
+        )
+        self._physics_rate_warning_emitted = True
 
 
 

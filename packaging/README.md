@@ -60,12 +60,14 @@ Then run the environment diagnostic inside each supported Isaac Sim runtime and
 capture the output in the release record:
 
 ```bash
+./python.sh packaging/configure_physics_scene.py --steps-per-second 208
 ./python.sh -m sim2real.imu.sensor.diagnostics --verbose
 ```
 
 A stable production release from `main` must not be tagged unless the diagnostic reports `Overall: PASS` in:
 
 - Isaac Sim 5.1.0 / Python 3.11 on Ubuntu 22.04.
+- Physics Scene configured to the current public Sim2Real baseline of `208 Hz`.
 
 For the isolated experimental Isaac Sim 6.0.0 branch, run separate prerelease validation:
 

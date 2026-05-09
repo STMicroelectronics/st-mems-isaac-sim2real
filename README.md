@@ -129,6 +129,7 @@ Run the diagnostic from the target Isaac Sim Python environment before enabling 
 
 The diagnostic must report `Overall: PASS`. If it reports `FAIL`, the output lists the runtime Python version, expected native backend filename, searched directories, discovered binaries, and exact rejection reason.
 It also prints the expected Python ABI for the active runtime and the manifest runtime matrix, for example `Isaac Sim 5.1.0 -> Python 3.11`.
+For stage-level timing fidelity, this repo currently recommends a Physics Scene rate of `208 Hz` for the public Sim2Real validation baseline.
 
 Expected diagnostic output on the stable support / production line:
 
@@ -143,6 +144,10 @@ Overall: PASS
   Manifest runtime matrix: Isaac Sim 5.1.0 -> Python 3.11; Isaac Sim 6.0.0 -> Python 3.12
   Compatible native backend candidates:
     PASS .../sim2real_native_v0_1.cpython-311-x86_64-linux-gnu.so (module=sim2real_native_v0_1)
+...
+[PASS] Physics step configuration
+  Steps/sec: 208.0
+  Repo baseline recommendation: 208 Hz
 ```
 
 Expected diagnostic output on the isolated experimental Isaac Sim 6.0.0 branch:
@@ -158,6 +163,10 @@ Overall: PASS
   Manifest runtime matrix: Isaac Sim 5.1.0 -> Python 3.11; Isaac Sim 6.0.0 -> Python 3.12
   Compatible native backend candidates:
     PASS .../sim2real_native_v0_1.cpython-312-x86_64-linux-gnu.so (module=sim2real_native_v0_1)
+...
+[PASS] Physics step configuration
+  Steps/sec: 208.0
+  Repo baseline recommendation: 208 Hz
 ```
 
 ### Step 4 — Enable the extension
@@ -252,6 +261,12 @@ If you are using a minimal Isaac Sim pip/conda environment, install the verifica
 pip install -r requirements.txt
 ```
 
+Before verification, configure the current stage Physics Scene to the repo baseline of `208 Hz`:
+
+```bash
+./python.sh packaging/configure_physics_scene.py --steps-per-second 208
+```
+
 1. Load a stage with a Franka robot
 2. Select `panda_hand` in the Stage panel and place an ASM330LHH sensor via the menu
 3. Open **Window → Script Editor**
@@ -289,6 +304,9 @@ Confirm all files are present including `noise/__init__.py`.
   - `Runtime Python: ...`
   - `Expected Python ABI for this runtime: ...`
   - `Manifest runtime matrix: Isaac Sim 5.1.0 -> Python 3.11; Isaac Sim 6.0.0 -> Python 3.12`
+- Read the physics section as well:
+  - `Steps/sec: ...`
+  - `Repo baseline recommendation: 208 Hz`
 - If you set `SIM2REAL_NATIVE_PATH`, verify it points to the folder or file containing a compatible `sim2real_native*.so`
 - Confirm the `.so` matches the Python version bundled with your Isaac Sim runtime
 - A typical ABI mismatch looks like:
@@ -316,6 +334,7 @@ pip install -r requirements.txt
   3. first IMU-like descendant under the attached link
   4. auto-create `<attachPrimPath>/Imu_Sensor`
 - If the sensor is added before a physics scene exists, the runtime defers truth IMU binding and retries automatically once physics is available. You should not need to delete and re-add the ST sensor.
+- For the current public Sim2Real baseline, configure the Physics Scene to `208 Hz` to reduce ODR timing quantization and validation drift.
 - If your stage uses a specific native IMU prim path, set `sim2real:truthImuPrimPath` directly on the Sim2Real sensor prim.
 - If auto-creation fails, check the console for `Could not initialize native Isaac sensor` and `Hint: set sim2real:truthImuPrimPath explicitly`.
 
