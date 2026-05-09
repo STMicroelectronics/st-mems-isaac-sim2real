@@ -69,6 +69,12 @@ class ImuSensorRuntime:
         # prim_path -> cached Isaac IMUSensor instance (initialized once at registration)
         self._truth_sensor_cache = {}
 
+        # prim_paths waiting for a truth IMU binding retry once physics is ready.
+        self._truth_sensor_pending = set()
+
+        # prim_path -> last initialization error string to suppress repeated log spam.
+        self._truth_sensor_init_errors = {}
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -86,6 +92,8 @@ class ImuSensorRuntime:
         self._last_tick_sim_time_s.clear()
         self._sensor_registry.clear()
         self._truth_sensor_cache.clear()
+        self._truth_sensor_pending.clear()
+        self._truth_sensor_init_errors.clear()
         print("[Sim2Real Runtime] Stopped.")
 
     def register_sensor(self, sensor_prim_path: str, sensor_config: dict, seed: int = 123):
@@ -114,10 +122,8 @@ class ImuSensorRuntime:
         attach_prim_path = normalized_config.get("attachPrimPath", "")
         truth_sensor_prim_path = normalized_config.get("truthImuPrimPath", "")
         if attach_prim_path:
-            self._initialize_truth_sensor(
+            self._ensure_truth_sensor_initialized(
                 sensor_prim_path,
-                attach_prim_path,
-                configured_truth_sensor_path=truth_sensor_prim_path,
             )
         else:
             print(
@@ -132,6 +138,8 @@ class ImuSensorRuntime:
         self._sample_accumulators_s.pop(sensor_prim_path, None)
         self._last_tick_sim_time_s.pop(sensor_prim_path, None)
         self._truth_sensor_cache.pop(sensor_prim_path, None)
+        self._truth_sensor_pending.discard(sensor_prim_path)
+        self._truth_sensor_init_errors.pop(sensor_prim_path, None)
 
         if hasattr(self._backend, "unregister_sensor"):
             self._backend.unregister_sensor(sensor_prim_path)
@@ -156,7 +164,8 @@ class ImuSensorRuntime:
         sensor_prim_path: str,
         attach_prim_path: str,
         configured_truth_sensor_path: str = "",
-    ):
+        stage=None,
+    ) -> bool:
         """
         Create and initialize a native Isaac IMUSensor for the given attach link.
         Resolution order:
@@ -165,13 +174,14 @@ class ImuSensorRuntime:
           3. First IMU-like descendant under attachPrimPath
           4. Auto-create <attach_prim_path>/Imu_Sensor as a final fallback
         """
-        stage = omni.usd.get_context().get_stage()
+        if stage is None:
+            stage = omni.usd.get_context().get_stage()
         if not stage:
             print(
                 f"[Sim2Real Runtime] WARNING: No stage while initializing truth IMU for "
                 f"{sensor_prim_path}."
             )
-            return
+            return False
 
         try:
             truth_sensor_path, resolution_source = self._resolve_truth_sensor_path(
@@ -192,22 +202,72 @@ class ImuSensorRuntime:
                 sensor.initialize()
 
             self._truth_sensor_cache[sensor_prim_path] = sensor
+            self._truth_sensor_pending.discard(sensor_prim_path)
+            self._truth_sensor_init_errors.pop(sensor_prim_path, None)
+            sensor_config = self._sensor_registry.get(sensor_prim_path)
+            if sensor_config is not None:
+                sensor_config["truthImuPrimPath"] = truth_sensor_path
             self._persist_truth_sensor_path(sensor_prim_path, truth_sensor_path)
             print(
                 f"[Sim2Real Runtime] Bound native Isaac IMU for {sensor_prim_path}: "
                 f"{truth_sensor_path} ({resolution_source})"
             )
+            return True
 
         except Exception as error:
-            print(
-                f"[Sim2Real Runtime] ERROR: Could not initialize native Isaac sensor "
-                f"for {sensor_prim_path}: {error}"
+            self._truth_sensor_pending.add(sensor_prim_path)
+            self._record_truth_sensor_init_failure(
+                sensor_prim_path,
+                attach_prim_path,
+                error,
             )
+            return False
+
+    def _ensure_truth_sensor_initialized(self, sensor_prim_path: str, stage=None) -> bool:
+        if sensor_prim_path in self._truth_sensor_cache:
+            return True
+
+        sensor_config = self._sensor_registry.get(sensor_prim_path, {})
+        attach_prim_path = sensor_config.get("attachPrimPath", "")
+        if not attach_prim_path:
+            attach_prim_path = self._read_attach_path_from_prim(sensor_prim_path)
+            if attach_prim_path:
+                sensor_config["attachPrimPath"] = attach_prim_path
+
+        if not attach_prim_path:
+            return False
+
+        configured_truth_sensor_path = sensor_config.get("truthImuPrimPath", "")
+        return self._initialize_truth_sensor(
+            sensor_prim_path,
+            attach_prim_path,
+            configured_truth_sensor_path=configured_truth_sensor_path,
+            stage=stage,
+        )
+
+    def _record_truth_sensor_init_failure(self, sensor_prim_path: str, attach_prim_path: str, error):
+        error_text = str(error)
+        if self._truth_sensor_init_errors.get(sensor_prim_path) == error_text:
+            return
+
+        self._truth_sensor_init_errors[sensor_prim_path] = error_text
+        print(
+            f"[Sim2Real Runtime] ERROR: Could not initialize native Isaac sensor "
+            f"for {sensor_prim_path}: {error_text}"
+        )
+
+        if "current_physics_prim" in error_text:
             print(
-                "[Sim2Real Runtime] Hint: set sim2real:truthImuPrimPath explicitly, "
-                f"or create a child IMU under {attach_prim_path}, or allow auto-creation "
-                f"at {attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}."
+                "[Sim2Real Runtime] Truth IMU initialization is waiting for a valid "
+                "physics scene. The runtime will retry automatically."
             )
+            return
+
+        print(
+            "[Sim2Real Runtime] Hint: set sim2real:truthImuPrimPath explicitly, "
+            f"or create a child IMU under {attach_prim_path}, or allow auto-creation "
+            f"at {attach_prim_path}/{self.TRUTH_SENSOR_PRIM_NAME}."
+        )
 
     def _resolve_truth_sensor_path(
         self,
@@ -306,6 +366,13 @@ class ImuSensorRuntime:
             sensor_period_s = 1.0 / odr_hz
             accumulated_dt = self._sample_accumulators_s.get(sensor_prim_path, 0.0) + dt
 
+            if sensor_config.get("attachPrimPath") and sensor_prim_path not in self._truth_sensor_cache:
+                self._ensure_truth_sensor_initialized(sensor_prim_path, stage=stage)
+
+            if sensor_config.get("attachPrimPath") and sensor_prim_path not in self._truth_sensor_cache:
+                self._sample_accumulators_s[sensor_prim_path] = min(accumulated_dt, sensor_period_s)
+                continue
+
             while accumulated_dt >= sensor_period_s:
                 accumulated_dt -= sensor_period_s
                 self._tick_sensor(stage, sensor_prim_path, sim_time)
@@ -319,6 +386,8 @@ class ImuSensorRuntime:
             return
 
         truth_kinematics = self._read_truth_kinematics(sensor_prim_path)
+        if truth_kinematics is None:
+            return
 
         if hasattr(self._backend, "step_sensor"):
             realistic_kinematics = self._backend.step_sensor(
@@ -332,26 +401,6 @@ class ImuSensorRuntime:
                 sim_time,
                 truth_kinematics,
             )
-
-        if realistic_kinematics is not None:
-            lin_acc = realistic_kinematics.get("lin_acc")
-            ang_vel = realistic_kinematics.get("ang_vel")
-            if lin_acc is not None:
-                lin_acc = self._coerce_numeric_sequence(
-                    lin_acc,
-                    sensor_prim_path=sensor_prim_path,
-                    label="lin_acc",
-                )
-                if lin_acc is not None:
-                    prim.SetCustomDataByKey(self.LAST_LIN_ACC_KEY, lin_acc)
-            if ang_vel is not None:
-                ang_vel = self._coerce_numeric_sequence(
-                    ang_vel,
-                    sensor_prim_path=sensor_prim_path,
-                    label="ang_vel",
-                )
-                if ang_vel is not None:
-                    prim.SetCustomDataByKey(self.LAST_ANG_VEL_KEY, ang_vel)
 
         self._last_tick_sim_time_s[sensor_prim_path] = sim_time
 
@@ -442,21 +491,6 @@ class ImuSensorRuntime:
 
         return odr_hz
 
-    def _coerce_numeric_sequence(
-        self,
-        values,
-        *,
-        sensor_prim_path: str,
-        label: str,
-    ) -> list[float] | None:
-        try:
-            return [float(value) for value in values]
-        except (TypeError, ValueError) as error:
-            print(
-                f"[Sim2Real Runtime] WARNING: Could not persist {label} for "
-                f"{sensor_prim_path}: {error}"
-            )
-            return None
 
 
 # Backward-compatible class name for existing imports.

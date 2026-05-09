@@ -315,6 +315,7 @@ pip install -r requirements.txt
   2. default child `<attachPrimPath>/Imu_Sensor`
   3. first IMU-like descendant under the attached link
   4. auto-create `<attachPrimPath>/Imu_Sensor`
+- If the sensor is added before a physics scene exists, the runtime defers truth IMU binding and retries automatically once physics is available. You should not need to delete and re-add the ST sensor.
 - If your stage uses a specific native IMU prim path, set `sim2real:truthImuPrimPath` directly on the Sim2Real sensor prim.
 - If auto-creation fails, check the console for `Could not initialize native Isaac sensor` and `Hint: set sim2real:truthImuPrimPath explicitly`.
 
