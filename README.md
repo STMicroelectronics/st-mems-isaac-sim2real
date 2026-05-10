@@ -6,7 +6,9 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 
 **Supported sensor models:**
 - ASM330LHH
-- LSM6DSV
+
+> Current public validation baseline: `ASM330LHH`.
+> `LSM6DSV` remains an internal placeholder profile and is intentionally hidden from the public Isaac Sim menu until its Sim2Real model is validated.
 
 ---
 
@@ -55,7 +57,7 @@ st-mems-isaac-sim2real/
   data/
     models/
       ASM330LHH.json            # ASM330LHH sensor-realism profile and hardware config
-      LSM6DSV.json              # LSM6DSV sensor-realism profile and hardware config
+      LSM6DSV.json              # Internal placeholder profile, not publicly exposed yet
   sim2real/
     imu/
       sensor/

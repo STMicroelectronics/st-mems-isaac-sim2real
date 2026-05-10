@@ -25,7 +25,8 @@ from .config import load_sensor_model_config, resolve_extension_root
 from .noise import NativeNoiseBackend
 from .runtime import ImuSensorRuntime
 
-SUPPORTED_SENSOR_MODELS = ("ASM330LHH", "LSM6DSV")
+# Public menu exposure is restricted to validated models only.
+SUPPORTED_SENSOR_MODELS = ("ASM330LHH",)
 SENSOR_MENU_ROOT = "STMicroelectronics IMU"
 SENSOR_METADATA_PREFIX = "sim2real:"
 SENSOR_MARKER_PRIM_NAME = "visual"

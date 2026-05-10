@@ -10,6 +10,7 @@ All notable changes to this project are documented in this file.
 - Deferred truth IMU binding until physics is ready and added automatic retry so sensors added before the physics scene no longer require delete/re-add workarounds.
 - Removed per-tick IMU debug-vector writes from USD custom data so Isaac 6 no longer throws non-fatal metadata type errors during simulation.
 - Added explicit `208 Hz` Physics Scene guidance, diagnostics visibility, and a helper script for the current public Sim2Real validation baseline.
+- Hid `LSM6DSV` from the public menu and README support claims until its Sim2Real model is validated.
 - Replaced deprecated `max_glibc` manifest metadata with `min_glibc`.
 - Documented compatibility-focused branch naming and isolated Python environment requirements.
 - Clarified that the current `main` support matrix differs from the historical `v2.1.0` Python 3.10 note for Isaac Sim 5.1.0.
