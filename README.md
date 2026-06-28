@@ -5,7 +5,7 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 ![Preview](imgs/preview.png)
 
 **Supported sensor models:**
-- ASM330LHH
+- ASM330LHH (X)
 
 > Current public validation baseline: `ASM330LHH`.
 > `LSM6DSV` remains an internal placeholder profile and is intentionally hidden from the public Isaac Sim menu until its Sim2Real model is validated.
@@ -197,7 +197,7 @@ Overall: PASS
 
 1. Load a robot into your scene
 2. In the **Stage** panel, click the link you want to attach the sensor to (e.g. `panda_hand`)
-3. From the top menu: `Create → Sensors → STMicroelectronics IMU → ASM330LHH`
+3. From the top menu: `Create → Sensors → STMicroelectronics IMU → ASM330LHH (X)`
 
 ![Menu Entry](imgs/menu_entry.png)
 
