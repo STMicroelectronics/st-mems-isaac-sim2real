@@ -4,10 +4,11 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 
 ![Preview](imgs/preview.png)
 
-**Supported sensor models:**
-- ASM330LHH
+**Sensor menu entry:**
+- ASM330LHHX
 
-> Current public validation baseline: `ASM330LHH`.
+> `ASM330LHHX` is the display label for the existing `ASM330LHH` profile. The internal model ID, JSON filename, USD prim paths, and seed derivation remain unchanged for compatibility. This label change does not establish ASM330LHHX-specific calibration or validation.
+> Current public validation baseline remains the `ASM330LHH` profile.
 > `LSM6DSV` remains an internal placeholder profile and is intentionally hidden from the public Isaac Sim menu until its Sim2Real model is validated.
 
 ---
@@ -56,7 +57,7 @@ st-mems-isaac-sim2real/
     extension.toml              # Extension metadata and dependencies
   data/
     models/
-      ASM330LHH.json            # ASM330LHH sensor-realism profile and hardware config
+      ASM330LHH.json            # Legacy profile used by the ASM330LHHX menu entry
       LSM6DSV.json              # Internal placeholder profile, not publicly exposed yet
   sim2real/
     imu/
@@ -197,7 +198,7 @@ Overall: PASS
 
 1. Load a robot into your scene
 2. In the **Stage** panel, click the link you want to attach the sensor to (e.g. `panda_hand`)
-3. From the top menu: `Create → Sensors → STMicroelectronics IMU → ASM330LHH`
+3. From the top menu: `Create → Sensors → STMicroelectronics IMU → ASM330LHHX`
 
 ![Menu Entry](imgs/menu_entry.png)
 
@@ -270,7 +271,7 @@ Before verification, configure the current stage Physics Scene to the repo basel
 ```
 
 1. Load a stage with a Franka robot
-2. Select `panda_hand` in the Stage panel and place an ASM330LHH sensor via the menu
+2. Select `panda_hand` in the Stage panel and place an ASM330LHHX sensor via the menu
 3. Open **Window → Script Editor**
 4. Paste and run `verification_script.py`
 5. Press **Play** — 5 trajectories log automatically to `~/Documents/trajectories_verification/`

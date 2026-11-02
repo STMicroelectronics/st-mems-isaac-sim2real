@@ -25,8 +25,9 @@ from .config import load_sensor_model_config, resolve_extension_root
 from .noise import NativeNoiseBackend
 from .runtime import ImuSensorRuntime
 
-# Public menu exposure is restricted to validated models only.
+# Keep internal IDs stable for existing configs, scenes, and native engines.
 SUPPORTED_SENSOR_MODELS = ("ASM330LHH",)
+SENSOR_MODEL_DISPLAY_LABELS = {"ASM330LHH": "ASM330LHHX"}
 SENSOR_MENU_ROOT = "STMicroelectronics IMU"
 SENSOR_METADATA_PREFIX = "sim2real:"
 SENSOR_MARKER_PRIM_NAME = "visual"
@@ -60,7 +61,7 @@ class StImuSensorExtension(omni.ext.IExt):
     def _build_create_menu_items(self):
         sensor_model_entries = [
             MenuItemDescription(
-                name=model_name,
+                name=SENSOR_MODEL_DISPLAY_LABELS.get(model_name, model_name),
                 onclick_fn=lambda selected_model=model_name: self._spawn_sensor(selected_model),
             )
             for model_name in SUPPORTED_SENSOR_MODELS

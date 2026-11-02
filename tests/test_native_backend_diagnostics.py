@@ -162,6 +162,24 @@ class NativeBackendDiagnosticsTests(unittest.TestCase):
         self.assertIn("Expected Python ABI for this runtime: 3.11", formatted)
         self.assertIn("Isaac Sim 5.1.0 -> Python 3.11", formatted)
 
+    def test_bundled_profile_preserves_legacy_native_input_and_seed(self):
+        profile_path = Path(__file__).resolve().parents[1] / "data/models/ASM330LHH.json"
+        config = json.loads(profile_path.read_text(encoding="utf-8"))
+        config["attachPrimPath"] = "/World/robot/link"
+        self.assertEqual(config["model_id"], "ASM330LHH")
+        engine = mock.Mock()
+        native_module = mock.Mock()
+        native_module.Sim2RealCore.return_value = engine
+
+        with mock.patch.multiple(
+            native_backend, _NATIVE_AVAILABLE=True, sim2real_native=native_module
+        ):
+            backend = native_backend.NativeNoiseBackend()
+            backend.register_sensor("/World/robot/link/ASM330LHH", config, seed=1105640753)
+
+        native_module.Sim2RealCore.assert_called_once_with(1105640753)
+        engine.update_configuration.assert_called_once_with(config)
+
 
 if __name__ == "__main__":
     unittest.main()
