@@ -70,7 +70,7 @@ def plot_verification(traj_path):
             "r-",
             alpha=0.5,
             linewidth=1.0,
-            label="Realistic Sim2Real IMU (ASM330LHH)",
+            label="Realistic Sim2Real IMU (ASM330LHHX)",
         )
 
         # Plot Clean on top

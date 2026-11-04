@@ -3,6 +3,7 @@
 All notable changes to this project are documented in this file.
 
 ## [v2.1.1] - Unreleased
+- Changed the public sensor display name to `ASM330LHHX` in the Create menu, verification plot legend, and documentation while preserving the internal `ASM330LHH` identifier, configuration, prim paths, and metadata.
 - Corrected Isaac Sim 5.1.0 support to Python 3.11 and added the canonical `sim2real_native_v0_1` native backend.
 - Added release-grade native backend diagnostics with Python ABI, glibc, search path, manifest, and import/smoke-test reporting.
 - Added release validation scripts for native manifest and Isaac-versioned ZIP packages.

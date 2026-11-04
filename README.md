@@ -5,9 +5,9 @@ A custom **Isaac Sim** extension that adds STMicroelectronics IMU sensor models 
 ![Preview](imgs/preview.png)
 
 **Supported sensor models:**
-- ASM330LHH (X)
+- ASM330LHHX
 
-> Current public validation baseline: `ASM330LHH`.
+> Current public validation baseline: `ASM330LHHX` (internal model ID: `ASM330LHH`).
 > `LSM6DSV` remains an internal placeholder profile and is intentionally hidden from the public Isaac Sim menu until its Sim2Real model is validated.
 
 ---
@@ -56,7 +56,7 @@ st-mems-isaac-sim2real/
     extension.toml              # Extension metadata and dependencies
   data/
     models/
-      ASM330LHH.json            # ASM330LHH sensor-realism profile and hardware config
+      ASM330LHH.json            # ASM330LHHX sensor-realism profile (legacy filename) and hardware config
       LSM6DSV.json              # Internal placeholder profile, not publicly exposed yet
   sim2real/
     imu/
@@ -197,7 +197,7 @@ Overall: PASS
 
 1. Load a robot into your scene
 2. In the **Stage** panel, click the link you want to attach the sensor to (e.g. `panda_hand`)
-3. From the top menu: `Create → Sensors → STMicroelectronics IMU → ASM330LHH (X)`
+3. From the top menu: `Create → Sensors → STMicroelectronics IMU → ASM330LHHX`
 
 ![Menu Entry](imgs/menu_entry.png)
 
@@ -217,6 +217,8 @@ Overall: PASS
 ## Sensor Configuration
 
 Each model's sensor-realism profile lives in `data/models/<model>.json`. Edit these files to tune the sensor — **no code changes required**.
+
+`ASM330LHHX` is the display name. For backward compatibility, its configuration filename, `model_id`, prim paths, and metadata retain `ASM330LHH`; existing scenes and scripts do not need migration.
 
 ```json
 {
@@ -270,7 +272,7 @@ Before verification, configure the current stage Physics Scene to the repo basel
 ```
 
 1. Load a stage with a Franka robot
-2. Select `panda_hand` in the Stage panel and place an ASM330LHH sensor via the menu
+2. Select `panda_hand` in the Stage panel and place an ASM330LHHX sensor via the menu
 3. Open **Window → Script Editor**
 4. Paste and run `verification_script.py`
 5. Press **Play** — 5 trajectories log automatically to `~/Documents/trajectories_verification/`

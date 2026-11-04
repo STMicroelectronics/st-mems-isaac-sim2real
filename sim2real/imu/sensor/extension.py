@@ -29,7 +29,7 @@ from .runtime import ImuSensorRuntime
 SUPPORTED_SENSOR_MODELS = ("ASM330LHH",)
 # Display-only menu labels. Keys remain the internal model identifier used for
 # config lookup, prim paths, and metadata; values are shown in the Create menu.
-SENSOR_MODEL_DISPLAY_LABELS = {"ASM330LHH": "ASM330LHH (X)"}
+SENSOR_MODEL_DISPLAY_LABELS = {"ASM330LHH": "ASM330LHHX"}
 SENSOR_MENU_ROOT = "STMicroelectronics IMU"
 SENSOR_METADATA_PREFIX = "sim2real:"
 SENSOR_MARKER_PRIM_NAME = "visual"
